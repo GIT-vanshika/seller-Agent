@@ -1,0 +1,770 @@
+[
+  {
+    "id": "ev_001",
+    "product_id": "prod_001",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Premium Butter Cookies."
+  },
+  {
+    "id": "ev_002",
+    "product_id": "prod_001",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Premium Butter Cookies."
+  },
+  {
+    "id": "ev_003",
+    "product_id": "prod_001",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Premium Butter Cookies."
+  },
+  {
+    "id": "ev_004",
+    "product_id": "prod_002",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Gourmet Vanilla Ice Cream."
+  },
+  {
+    "id": "ev_005",
+    "product_id": "prod_002",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Gourmet Vanilla Ice Cream."
+  },
+  {
+    "id": "ev_006",
+    "product_id": "prod_002",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Gourmet Vanilla Ice Cream."
+  },
+  {
+    "id": "ev_007",
+    "product_id": "prod_003",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "High-resolution catalog photo of Silk Designer Dress."
+  },
+  {
+    "id": "ev_008",
+    "product_id": "prod_003",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller-provided reality video",
+    "content": "Unedited video clip showing fabric texture and natural lighting view of Silk Designer Dress."
+  },
+  {
+    "id": "ev_009",
+    "product_id": "prod_003",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review: 'The silk fabric quality is great and matches the video clip accurately.'"
+  },
+  {
+    "id": "ev_010",
+    "product_id": "prod_003",
+    "type": "image",
+    "source": "customer_experience",
+    "label": "Customer-provided image",
+    "content": "Customer photo showing Silk Designer Dress in real-world use."
+  },
+  {
+    "id": "ev_011",
+    "product_id": "prod_004",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Handcrafted Ceramic Vase Set."
+  },
+  {
+    "id": "ev_012",
+    "product_id": "prod_004",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Handcrafted Ceramic Vase Set."
+  },
+  {
+    "id": "ev_013",
+    "product_id": "prod_004",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Handcrafted Ceramic Vase Set."
+  },
+  {
+    "id": "ev_014",
+    "product_id": "prod_004",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller reality inspection video",
+    "content": "Live unboxing video clip showing dimensions and color of Handcrafted Ceramic Vase Set."
+  },
+  {
+    "id": "ev_015",
+    "product_id": "prod_005",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Studio catalog photo of Embroidered Linen Shirt."
+  },
+  {
+    "id": "ev_016",
+    "product_id": "prod_005",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller promotional description",
+    "content": "Seller description highlighting fabric and features of Embroidered Linen Shirt."
+  },
+  {
+    "id": "ev_017",
+    "product_id": "prod_006",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Organic Dark Chocolate Bar."
+  },
+  {
+    "id": "ev_018",
+    "product_id": "prod_006",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Organic Dark Chocolate Bar."
+  },
+  {
+    "id": "ev_019",
+    "product_id": "prod_006",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Organic Dark Chocolate Bar."
+  },
+  {
+    "id": "ev_020",
+    "product_id": "prod_007",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Sparkling Mango Soda 6-Pack."
+  },
+  {
+    "id": "ev_021",
+    "product_id": "prod_007",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Sparkling Mango Soda 6-Pack."
+  },
+  {
+    "id": "ev_022",
+    "product_id": "prod_007",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Sparkling Mango Soda 6-Pack."
+  },
+  {
+    "id": "ev_023",
+    "product_id": "prod_008",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Leather Biker Jacket."
+  },
+  {
+    "id": "ev_024",
+    "product_id": "prod_008",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Leather Biker Jacket."
+  },
+  {
+    "id": "ev_025",
+    "product_id": "prod_008",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Leather Biker Jacket."
+  },
+  {
+    "id": "ev_026",
+    "product_id": "prod_008",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller reality inspection video",
+    "content": "Live unboxing video clip showing dimensions and color of Leather Biker Jacket."
+  },
+  {
+    "id": "ev_027",
+    "product_id": "prod_009",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Handwoven Jute Rug 4x6ft."
+  },
+  {
+    "id": "ev_028",
+    "product_id": "prod_009",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Handwoven Jute Rug 4x6ft."
+  },
+  {
+    "id": "ev_029",
+    "product_id": "prod_009",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Handwoven Jute Rug 4x6ft."
+  },
+  {
+    "id": "ev_030",
+    "product_id": "prod_009",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller reality inspection video",
+    "content": "Live unboxing video clip showing dimensions and color of Handwoven Jute Rug 4x6ft."
+  },
+  {
+    "id": "ev_031",
+    "product_id": "prod_010",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Studio catalog photo of Velvet Cushion Covers (Set of 4)."
+  },
+  {
+    "id": "ev_032",
+    "product_id": "prod_010",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller promotional description",
+    "content": "Seller description highlighting fabric and features of Velvet Cushion Covers (Set of 4)."
+  },
+  {
+    "id": "ev_033",
+    "product_id": "prod_011",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Roasted Almonds & Raisins Mix."
+  },
+  {
+    "id": "ev_034",
+    "product_id": "prod_011",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Roasted Almonds & Raisins Mix."
+  },
+  {
+    "id": "ev_035",
+    "product_id": "prod_011",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Roasted Almonds & Raisins Mix."
+  },
+  {
+    "id": "ev_036",
+    "product_id": "prod_012",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Cold Pressed Coconut Oil 1L."
+  },
+  {
+    "id": "ev_037",
+    "product_id": "prod_012",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Cold Pressed Coconut Oil 1L."
+  },
+  {
+    "id": "ev_038",
+    "product_id": "prod_012",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Cold Pressed Coconut Oil 1L."
+  },
+  {
+    "id": "ev_039",
+    "product_id": "prod_013",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Handcrafted Leather Tote Bag."
+  },
+  {
+    "id": "ev_040",
+    "product_id": "prod_013",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Handcrafted Leather Tote Bag."
+  },
+  {
+    "id": "ev_041",
+    "product_id": "prod_013",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Handcrafted Leather Tote Bag."
+  },
+  {
+    "id": "ev_042",
+    "product_id": "prod_013",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller reality inspection video",
+    "content": "Live unboxing video clip showing dimensions and color of Handcrafted Leather Tote Bag."
+  },
+  {
+    "id": "ev_043",
+    "product_id": "prod_014",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Brass Table Lamp with Linen Shade."
+  },
+  {
+    "id": "ev_044",
+    "product_id": "prod_014",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Brass Table Lamp with Linen Shade."
+  },
+  {
+    "id": "ev_045",
+    "product_id": "prod_014",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Brass Table Lamp with Linen Shade."
+  },
+  {
+    "id": "ev_046",
+    "product_id": "prod_014",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller reality inspection video",
+    "content": "Live unboxing video clip showing dimensions and color of Brass Table Lamp with Linen Shade."
+  },
+  {
+    "id": "ev_047",
+    "product_id": "prod_015",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Studio catalog photo of Hand Block Print Cotton Saree."
+  },
+  {
+    "id": "ev_048",
+    "product_id": "prod_015",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller promotional description",
+    "content": "Seller description highlighting fabric and features of Hand Block Print Cotton Saree."
+  },
+  {
+    "id": "ev_049",
+    "product_id": "prod_016",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Artisanal Green Tea Leaves 100g."
+  },
+  {
+    "id": "ev_050",
+    "product_id": "prod_016",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Artisanal Green Tea Leaves 100g."
+  },
+  {
+    "id": "ev_051",
+    "product_id": "prod_016",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Artisanal Green Tea Leaves 100g."
+  },
+  {
+    "id": "ev_052",
+    "product_id": "prod_017",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Wildflower Honey 500g."
+  },
+  {
+    "id": "ev_053",
+    "product_id": "prod_017",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Wildflower Honey 500g."
+  },
+  {
+    "id": "ev_054",
+    "product_id": "prod_017",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Wildflower Honey 500g."
+  },
+  {
+    "id": "ev_055",
+    "product_id": "prod_018",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Men's Wool Blend Blazer."
+  },
+  {
+    "id": "ev_056",
+    "product_id": "prod_018",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Men's Wool Blend Blazer."
+  },
+  {
+    "id": "ev_057",
+    "product_id": "prod_018",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Men's Wool Blend Blazer."
+  },
+  {
+    "id": "ev_058",
+    "product_id": "prod_018",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller reality inspection video",
+    "content": "Live unboxing video clip showing dimensions and color of Men's Wool Blend Blazer."
+  },
+  {
+    "id": "ev_059",
+    "product_id": "prod_019",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Wooden Wall Clock 14 inch."
+  },
+  {
+    "id": "ev_060",
+    "product_id": "prod_019",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Wooden Wall Clock 14 inch."
+  },
+  {
+    "id": "ev_061",
+    "product_id": "prod_019",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Wooden Wall Clock 14 inch."
+  },
+  {
+    "id": "ev_062",
+    "product_id": "prod_019",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller reality inspection video",
+    "content": "Live unboxing video clip showing dimensions and color of Wooden Wall Clock 14 inch."
+  },
+  {
+    "id": "ev_063",
+    "product_id": "prod_020",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Studio catalog photo of Casual Denim Trucker Jacket."
+  },
+  {
+    "id": "ev_064",
+    "product_id": "prod_020",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller promotional description",
+    "content": "Seller description highlighting fabric and features of Casual Denim Trucker Jacket."
+  },
+  {
+    "id": "ev_065",
+    "product_id": "prod_021",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Gourmet Hazelnut Spread 350g."
+  },
+  {
+    "id": "ev_066",
+    "product_id": "prod_021",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Gourmet Hazelnut Spread 350g."
+  },
+  {
+    "id": "ev_067",
+    "product_id": "prod_021",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Gourmet Hazelnut Spread 350g."
+  },
+  {
+    "id": "ev_068",
+    "product_id": "prod_022",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Organic Oat Milk 1L."
+  },
+  {
+    "id": "ev_069",
+    "product_id": "prod_022",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Organic Oat Milk 1L."
+  },
+  {
+    "id": "ev_070",
+    "product_id": "prod_022",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Organic Oat Milk 1L."
+  },
+  {
+    "id": "ev_071",
+    "product_id": "prod_023",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Handmade Leather Loafers."
+  },
+  {
+    "id": "ev_072",
+    "product_id": "prod_023",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Handmade Leather Loafers."
+  },
+  {
+    "id": "ev_073",
+    "product_id": "prod_023",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Handmade Leather Loafers."
+  },
+  {
+    "id": "ev_074",
+    "product_id": "prod_023",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller reality inspection video",
+    "content": "Live unboxing video clip showing dimensions and color of Handmade Leather Loafers."
+  },
+  {
+    "id": "ev_075",
+    "product_id": "prod_024",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Macrame Wall Hanging Tapestry."
+  },
+  {
+    "id": "ev_076",
+    "product_id": "prod_024",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Macrame Wall Hanging Tapestry."
+  },
+  {
+    "id": "ev_077",
+    "product_id": "prod_024",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Macrame Wall Hanging Tapestry."
+  },
+  {
+    "id": "ev_078",
+    "product_id": "prod_024",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller reality inspection video",
+    "content": "Live unboxing video clip showing dimensions and color of Macrame Wall Hanging Tapestry."
+  },
+  {
+    "id": "ev_079",
+    "product_id": "prod_025",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Studio catalog photo of Chiffon Floral Maxi Dress."
+  },
+  {
+    "id": "ev_080",
+    "product_id": "prod_025",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller promotional description",
+    "content": "Seller description highlighting fabric and features of Chiffon Floral Maxi Dress."
+  },
+  {
+    "id": "ev_081",
+    "product_id": "prod_026",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Almond Biscotti Pack 200g."
+  },
+  {
+    "id": "ev_082",
+    "product_id": "prod_026",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Almond Biscotti Pack 200g."
+  },
+  {
+    "id": "ev_083",
+    "product_id": "prod_026",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Almond Biscotti Pack 200g."
+  },
+  {
+    "id": "ev_084",
+    "product_id": "prod_027",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Organic Cold-Pressed Orange Juice."
+  },
+  {
+    "id": "ev_085",
+    "product_id": "prod_027",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Organic Cold-Pressed Orange Juice."
+  },
+  {
+    "id": "ev_086",
+    "product_id": "prod_027",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Organic Cold-Pressed Orange Juice."
+  },
+  {
+    "id": "ev_087",
+    "product_id": "prod_028",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Hand-Carved Wooden Jewelry Box."
+  },
+  {
+    "id": "ev_088",
+    "product_id": "prod_028",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Hand-Carved Wooden Jewelry Box."
+  },
+  {
+    "id": "ev_089",
+    "product_id": "prod_028",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Hand-Carved Wooden Jewelry Box."
+  },
+  {
+    "id": "ev_090",
+    "product_id": "prod_028",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller reality inspection video",
+    "content": "Live unboxing video clip showing dimensions and color of Hand-Carved Wooden Jewelry Box."
+  },
+  {
+    "id": "ev_091",
+    "product_id": "prod_029",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Official studio photo of Aromatherapy Soy Candle (Lavender)."
+  },
+  {
+    "id": "ev_092",
+    "product_id": "prod_029",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller specifications",
+    "content": "Product specifications for Aromatherapy Soy Candle (Lavender)."
+  },
+  {
+    "id": "ev_093",
+    "product_id": "prod_029",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Customer review",
+    "content": "Customer review commenting on quality and packaging of Aromatherapy Soy Candle (Lavender)."
+  },
+  {
+    "id": "ev_094",
+    "product_id": "prod_029",
+    "type": "video",
+    "source": "seller_reality",
+    "label": "Seller reality inspection video",
+    "content": "Live unboxing video clip showing dimensions and color of Aromatherapy Soy Candle (Lavender)."
+  },
+  {
+    "id": "ev_095",
+    "product_id": "prod_030",
+    "type": "image",
+    "source": "seller_marketing",
+    "label": "Seller catalog photo",
+    "content": "Studio catalog photo of Handmade Woolen Cardigan."
+  },
+  {
+    "id": "ev_096",
+    "product_id": "prod_030",
+    "type": "text",
+    "source": "seller_marketing",
+    "label": "Seller promotional description",
+    "content": "Seller description highlighting fabric and features of Handmade Woolen Cardigan."
+  }
+]

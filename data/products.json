@@ -1,0 +1,212 @@
+[
+  {
+    "id": "prod_001",
+    "name": "Premium Butter Cookies",
+    "description": "Rich, buttery Danish-style cookies in a tin.",
+    "listed_price": 100.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_002",
+    "name": "Gourmet Vanilla Ice Cream",
+    "description": "Artisanal Madagascar vanilla bean ice cream 500ml.",
+    "listed_price": 150.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_003",
+    "name": "Silk Designer Dress",
+    "description": "Handcrafted pure mulberry silk evening gown.",
+    "listed_price": 2500.0,
+    "category": "Fashion"
+  },
+  {
+    "id": "prod_004",
+    "name": "Handcrafted Ceramic Vase Set",
+    "description": "Set of 3 minimalist terracotta ceramic vases.",
+    "listed_price": 1200.0,
+    "category": "Home Decor"
+  },
+  {
+    "id": "prod_005",
+    "name": "Embroidered Linen Shirt",
+    "description": "Breathable 100% organic linen casual shirt.",
+    "listed_price": 1800.0,
+    "category": "Fashion"
+  },
+  {
+    "id": "prod_006",
+    "name": "Organic Dark Chocolate Bar",
+    "description": "70% Single origin Ecuadorian dark chocolate.",
+    "listed_price": 80.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_007",
+    "name": "Sparkling Mango Soda 6-Pack",
+    "description": "Refreshing natural fruit juice sparkling soda.",
+    "listed_price": 120.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_008",
+    "name": "Leather Biker Jacket",
+    "description": "Genuine full-grain lambskin leather jacket.",
+    "listed_price": 4500.0,
+    "category": "Fashion"
+  },
+  {
+    "id": "prod_009",
+    "name": "Handwoven Jute Rug 4x6ft",
+    "description": "Eco-friendly natural fiber braided floor rug.",
+    "listed_price": 3000.0,
+    "category": "Home Decor"
+  },
+  {
+    "id": "prod_010",
+    "name": "Velvet Cushion Covers (Set of 4)",
+    "description": "Luxurious soft touch decorative cushion covers.",
+    "listed_price": 1000.0,
+    "category": "Home Decor"
+  },
+  {
+    "id": "prod_011",
+    "name": "Roasted Almonds & Raisins Mix",
+    "description": "Premium dry fruit blend 250g jar.",
+    "listed_price": 220.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_012",
+    "name": "Cold Pressed Coconut Oil 1L",
+    "description": "Virgin unrefined coconut oil for cooking & hair.",
+    "listed_price": 280.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_013",
+    "name": "Handcrafted Leather Tote Bag",
+    "description": "Spacious genuine leather handbag with laptop sleeve.",
+    "listed_price": 3200.0,
+    "category": "Fashion"
+  },
+  {
+    "id": "prod_014",
+    "name": "Brass Table Lamp with Linen Shade",
+    "description": "Vintage style warm ambient bedside lighting.",
+    "listed_price": 2200.0,
+    "category": "Home Decor"
+  },
+  {
+    "id": "prod_015",
+    "name": "Hand Block Print Cotton Saree",
+    "description": "Traditional Jaipur floral print lightweight saree.",
+    "listed_price": 2100.0,
+    "category": "Fashion"
+  },
+  {
+    "id": "prod_016",
+    "name": "Artisanal Green Tea Leaves 100g",
+    "description": "Darjeeling whole leaf organic green tea.",
+    "listed_price": 350.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_017",
+    "name": "Wildflower Honey 500g",
+    "description": "Raw unprocessed mountain honey.",
+    "listed_price": 190.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_018",
+    "name": "Men's Wool Blend Blazer",
+    "description": "Tailored slim-fit formal party blazer.",
+    "listed_price": 5000.0,
+    "category": "Fashion"
+  },
+  {
+    "id": "prod_019",
+    "name": "Wooden Wall Clock 14 inch",
+    "description": "Solid teak wood silent sweep clock.",
+    "listed_price": 1600.0,
+    "category": "Home Decor"
+  },
+  {
+    "id": "prod_020",
+    "name": "Casual Denim Trucker Jacket",
+    "description": "Classic heavy wash cotton denim outerwear.",
+    "listed_price": 2400.0,
+    "category": "Fashion"
+  },
+  {
+    "id": "prod_021",
+    "name": "Gourmet Hazelnut Spread 350g",
+    "description": "Rich cocoa & roasted hazelnut butter.",
+    "listed_price": 260.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_022",
+    "name": "Organic Oat Milk 1L",
+    "description": "Unsweetened plant-based barista oat drink.",
+    "listed_price": 210.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_023",
+    "name": "Handmade Leather Loafers",
+    "description": "Italian leather slip-on formal shoes.",
+    "listed_price": 3800.0,
+    "category": "Fashion"
+  },
+  {
+    "id": "prod_024",
+    "name": "Macrame Wall Hanging Tapestry",
+    "description": "Boho style woven cotton rope wall art.",
+    "listed_price": 1400.0,
+    "category": "Home Decor"
+  },
+  {
+    "id": "prod_025",
+    "name": "Chiffon Floral Maxi Dress",
+    "description": "Flowy summer floral print long dress.",
+    "listed_price": 1900.0,
+    "category": "Fashion"
+  },
+  {
+    "id": "prod_026",
+    "name": "Almond Biscotti Pack 200g",
+    "description": "Double-baked crunchy Italian coffee cookies.",
+    "listed_price": 140.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_027",
+    "name": "Organic Cold-Pressed Orange Juice",
+    "description": "100% pure Valencia orange juice 750ml.",
+    "listed_price": 160.0,
+    "category": "Packaged Goods"
+  },
+  {
+    "id": "prod_028",
+    "name": "Hand-Carved Wooden Jewelry Box",
+    "description": "Sheesham wood brass inlay storage trunk.",
+    "listed_price": 1700.0,
+    "category": "Home Decor"
+  },
+  {
+    "id": "prod_029",
+    "name": "Aromatherapy Soy Candle (Lavender)",
+    "description": "Hand-poured essential oil scented candle in jar.",
+    "listed_price": 850.0,
+    "category": "Home Decor"
+  },
+  {
+    "id": "prod_030",
+    "name": "Handmade Woolen Cardigan",
+    "description": "Cozy knit button-down sweater.",
+    "listed_price": 2600.0,
+    "category": "Fashion"
+  }
+]

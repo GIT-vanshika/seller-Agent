@@ -1,0 +1,402 @@
+[
+  {
+    "product_id": "prod_001",
+    "pricing_mode": "fixed",
+    "listed_price": 100.0,
+    "aspiration_price": 100.0,
+    "target_price": 100.0,
+    "reservation_price": 100.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_002",
+    "pricing_mode": "fixed",
+    "listed_price": 150.0,
+    "aspiration_price": 150.0,
+    "target_price": 150.0,
+    "reservation_price": 150.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_003",
+    "pricing_mode": "negotiable",
+    "listed_price": 2500.0,
+    "aspiration_price": 2400.0,
+    "target_price": 1750.0,
+    "reservation_price": 1550.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 5,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_004",
+    "pricing_mode": "negotiable",
+    "listed_price": 1200.0,
+    "aspiration_price": 1150.0,
+    "target_price": 900.0,
+    "reservation_price": 800.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 4,
+    "bulk_rules": {
+      "tiers": [
+        {
+          "min_quantity": 5,
+          "discount_percentage": 10.0
+        },
+        {
+          "min_quantity": 10,
+          "discount_percentage": 18.0
+        },
+        {
+          "min_quantity": 20,
+          "discount_percentage": 25.0
+        }
+      ]
+    }
+  },
+  {
+    "product_id": "prod_005",
+    "pricing_mode": "negotiable",
+    "listed_price": 1800.0,
+    "aspiration_price": 1750.0,
+    "target_price": 1400.0,
+    "reservation_price": 1200.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 3,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_006",
+    "pricing_mode": "fixed",
+    "listed_price": 80.0,
+    "aspiration_price": 80.0,
+    "target_price": 80.0,
+    "reservation_price": 80.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_007",
+    "pricing_mode": "fixed",
+    "listed_price": 120.0,
+    "aspiration_price": 120.0,
+    "target_price": 120.0,
+    "reservation_price": 120.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_008",
+    "pricing_mode": "negotiable",
+    "listed_price": 4500.0,
+    "aspiration_price": 4300.0,
+    "target_price": 3500.0,
+    "reservation_price": 3200.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 5,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_009",
+    "pricing_mode": "negotiable",
+    "listed_price": 3000.0,
+    "aspiration_price": 2900.0,
+    "target_price": 2300.0,
+    "reservation_price": 2100.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 4,
+    "bulk_rules": {
+      "tiers": [
+        {
+          "min_quantity": 3,
+          "discount_percentage": 10.0
+        },
+        {
+          "min_quantity": 5,
+          "discount_percentage": 20.0
+        }
+      ]
+    }
+  },
+  {
+    "product_id": "prod_010",
+    "pricing_mode": "negotiable",
+    "listed_price": 1000.0,
+    "aspiration_price": 950.0,
+    "target_price": 750.0,
+    "reservation_price": 650.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 3,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_011",
+    "pricing_mode": "fixed",
+    "listed_price": 220.0,
+    "aspiration_price": 220.0,
+    "target_price": 220.0,
+    "reservation_price": 220.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_012",
+    "pricing_mode": "fixed",
+    "listed_price": 280.0,
+    "aspiration_price": 280.0,
+    "target_price": 280.0,
+    "reservation_price": 280.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_013",
+    "pricing_mode": "negotiable",
+    "listed_price": 3200.0,
+    "aspiration_price": 3100.0,
+    "target_price": 2500.0,
+    "reservation_price": 2200.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 4,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_014",
+    "pricing_mode": "negotiable",
+    "listed_price": 2200.0,
+    "aspiration_price": 2100.0,
+    "target_price": 1700.0,
+    "reservation_price": 1500.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 4,
+    "bulk_rules": {
+      "tiers": [
+        {
+          "min_quantity": 4,
+          "discount_percentage": 10.0
+        },
+        {
+          "min_quantity": 8,
+          "discount_percentage": 15.0
+        }
+      ]
+    }
+  },
+  {
+    "product_id": "prod_015",
+    "pricing_mode": "negotiable",
+    "listed_price": 2100.0,
+    "aspiration_price": 2000.0,
+    "target_price": 1600.0,
+    "reservation_price": 1400.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 3,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_016",
+    "pricing_mode": "fixed",
+    "listed_price": 350.0,
+    "aspiration_price": 350.0,
+    "target_price": 350.0,
+    "reservation_price": 350.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_017",
+    "pricing_mode": "fixed",
+    "listed_price": 190.0,
+    "aspiration_price": 190.0,
+    "target_price": 190.0,
+    "reservation_price": 190.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_018",
+    "pricing_mode": "negotiable",
+    "listed_price": 5000.0,
+    "aspiration_price": 4800.0,
+    "target_price": 3800.0,
+    "reservation_price": 3400.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 5,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_019",
+    "pricing_mode": "negotiable",
+    "listed_price": 1600.0,
+    "aspiration_price": 1500.0,
+    "target_price": 1200.0,
+    "reservation_price": 1050.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 4,
+    "bulk_rules": {
+      "tiers": [
+        {
+          "min_quantity": 6,
+          "discount_percentage": 10.0
+        },
+        {
+          "min_quantity": 12,
+          "discount_percentage": 20.0
+        }
+      ]
+    }
+  },
+  {
+    "product_id": "prod_020",
+    "pricing_mode": "negotiable",
+    "listed_price": 2400.0,
+    "aspiration_price": 2300.0,
+    "target_price": 1850.0,
+    "reservation_price": 1600.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 3,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_021",
+    "pricing_mode": "fixed",
+    "listed_price": 260.0,
+    "aspiration_price": 260.0,
+    "target_price": 260.0,
+    "reservation_price": 260.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_022",
+    "pricing_mode": "fixed",
+    "listed_price": 210.0,
+    "aspiration_price": 210.0,
+    "target_price": 210.0,
+    "reservation_price": 210.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_023",
+    "pricing_mode": "negotiable",
+    "listed_price": 3800.0,
+    "aspiration_price": 3600.0,
+    "target_price": 2900.0,
+    "reservation_price": 2600.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 4,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_024",
+    "pricing_mode": "negotiable",
+    "listed_price": 1400.0,
+    "aspiration_price": 1300.0,
+    "target_price": 1000.0,
+    "reservation_price": 850.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 4,
+    "bulk_rules": {
+      "tiers": [
+        {
+          "min_quantity": 5,
+          "discount_percentage": 10.0
+        },
+        {
+          "min_quantity": 10,
+          "discount_percentage": 25.0
+        }
+      ]
+    }
+  },
+  {
+    "product_id": "prod_025",
+    "pricing_mode": "negotiable",
+    "listed_price": 1900.0,
+    "aspiration_price": 1800.0,
+    "target_price": 1450.0,
+    "reservation_price": 1250.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 3,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_026",
+    "pricing_mode": "fixed",
+    "listed_price": 140.0,
+    "aspiration_price": 140.0,
+    "target_price": 140.0,
+    "reservation_price": 140.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_027",
+    "pricing_mode": "fixed",
+    "listed_price": 160.0,
+    "aspiration_price": 160.0,
+    "target_price": 160.0,
+    "reservation_price": 160.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 0,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_028",
+    "pricing_mode": "negotiable",
+    "listed_price": 1700.0,
+    "aspiration_price": 1600.0,
+    "target_price": 1300.0,
+    "reservation_price": 1100.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 4,
+    "bulk_rules": null
+  },
+  {
+    "product_id": "prod_029",
+    "pricing_mode": "negotiable",
+    "listed_price": 850.0,
+    "aspiration_price": 800.0,
+    "target_price": 650.0,
+    "reservation_price": 550.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 3,
+    "bulk_rules": {
+      "tiers": [
+        {
+          "min_quantity": 5,
+          "discount_percentage": 10.0
+        },
+        {
+          "min_quantity": 15,
+          "discount_percentage": 20.0
+        }
+      ]
+    }
+  },
+  {
+    "product_id": "prod_030",
+    "pricing_mode": "negotiable",
+    "listed_price": 2600.0,
+    "aspiration_price": 2500.0,
+    "target_price": 2000.0,
+    "reservation_price": 1750.0,
+    "batna": "normal_sale",
+    "max_negotiation_rounds": 3,
+    "bulk_rules": null
+  }
+]
