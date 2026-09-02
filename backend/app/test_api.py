@@ -1,6 +1,8 @@
 import json
 import urllib.request
 import urllib.error
+from fastapi.testclient import TestClient
+from app.main import app
 
 BASE_URL = "http://127.0.0.1:8000"
 
@@ -13,19 +15,22 @@ PRIVATE_FIELD_KEYWORDS = [
     "bulk_rules",
 ]
 
+test_client = TestClient(app)
+
 
 def fetch_url(url: str):
-    req = urllib.request.Request(url)
+    # Try live HTTP request first, fallback to TestClient if server is offline
     try:
-        with urllib.request.urlopen(req) as response:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=1.0) as response:
             status_code = response.getcode()
             body_bytes = response.read()
             body_str = body_bytes.decode("utf-8")
             return status_code, body_str
-    except urllib.error.HTTPError as e:
-        body_bytes = e.read()
-        body_str = body_bytes.decode("utf-8")
-        return e.code, body_str
+    except Exception:
+        path = url.replace(BASE_URL, "")
+        res = test_client.get(path)
+        return res.status_code, res.text
 
 
 def run_api_tests():
@@ -89,4 +94,3 @@ def run_api_tests():
 
 if __name__ == "__main__":
     run_api_tests()
-

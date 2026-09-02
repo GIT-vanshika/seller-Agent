@@ -1,36 +1,24 @@
-# Python virtual environments & bytecode
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-ENV/
-env/
-
-# Environment files
+# Environment variables (NEVER commit real API keys or secrets)
 .env
 .env.local
 .env.*.local
-!.env.example
 
-# Node / Next.js
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.pytest_cache/
+
+# Next.js / Node
 node_modules/
 .next/
 out/
 build/
-dist/
-.npm
 
-# Testing & Cache
-.pytest_cache/
-.cache/
-.coverage
-htmlcov/
-
-# Operating System & IDE
-.DS_Store
-Thumbs.db
+# IDE / OS
 .vscode/
 .idea/
-*.swp
-*.swo
+.DS_Store
+Thumbs.db
