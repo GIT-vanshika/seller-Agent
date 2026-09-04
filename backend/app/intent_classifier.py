@@ -32,7 +32,9 @@ class IntentClassifier:
 
     PRICE_PATTERNS = [
         # Explicit offer prefixes with strict word boundaries
-        r"\b(?:for|at|give(?:\s+it)?(?:\s+for)?|offer(?:\s+of)?|how\s+about|what\s+about|pay|i\'?ll\s+pay|i\s+can\s+pay|i\'?ll\s+do|i\s+can\s+do|take|buy\s+for|is|under|below|around|within|max|ok(?:\s+then)?|okay(?:\s+then)?|then|make\s+it|i\s+want(?:\s+it)?|want(?:\s+it)?|can\s+you\s+do|can\s+i\s+get(?:\s+it)?(?:\s+for|\s+under|\s+at)?|can\s+you\s+give(?:\s+it)?(?:\s+for)?|can\s+you\s+make\s+it|could\s+you\s+do)\b\s*(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d{1,2})?)(?!\s*(?:%|percent|percentage))",
+        r"\b(?:for|at|give(?:\s+it)?(?:\s+for)?|offer(?:\s+of)?|how\s+about|what\s+about|pay|i\'?ll\s+pay|i\s+can\s+pay|i\'?ll\s+do|i\s+can\s+do|take|buy\s+for|is|under|below|around|within|max|ok(?:\s+then)?|okay(?:\s+then)?|then|make\s+it|i\s+want(?:\s+it)?|want(?:\s+it)?|can\s+you\s+do|could\s+you\s+do|if\s+you\s+can\s+do|if\s+you\s+could\s+do|you\s+can\s+do|you\s+could\s+do|do|can\s+i\s+get(?:\s+it)?(?:\s+for|\s+under|\s+at)?|can\s+you\s+give(?:\s+it)?(?:\s+for)?|can\s+you\s+make\s+it)\b\s*(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d{1,2})?)(?!\s*(?:%|percent|percentage))",
+        # Reference to previously stated or promised price (e.g. 'you said ok for 900', 'said 900', 'agreed for 900')
+        r"\b(?:you\s+said|said|offered|agreed(?:\s+to|\s+on)?|mentioned|promised)(?:\s+ok)?(?:\s+for)?\s*(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d{1,2})?)",
         # Currency prefixes
         r"(?:rs\.?|inr|₹)\s*(\d+(?:\.\d{1,2})?)(?!\s*(?:%|percent|percentage))",
         # Suffix patterns indicating an offer or price
@@ -47,14 +49,15 @@ class IntentClassifier:
     }
 
     QTY_PATTERNS = [
-        r"(\d+)\s*(?:pieces?|units?|pcs|items?|qty|quantity|packs?|piece|unit|item|pack)",
+        # Explicit unit suffixes (always valid quantity)
+        r"(\d+)\s*(?:pieces?|units?|pcs|items?|qty|quantity|packs?|piece|unit|item|pack)\b",
+        r"\b(?:quantity|qty)\s*[:=]?\s*(\d+)\b",
+        # Implicit quantities: small numbers only (<= 50)
         r"\b(?:buy|need|order|take|want|get)\s+(\d+)\b",
         r"\b(?:what\s+about|how\s+about|what\s+if\s+i\s+take|if\s+i\s+take|if\s+i\s+buy)\s+(\d+)\b",
-        r"\b(?:for)\s+(\d+)(?:\s*(?:pieces?|units?|pcs|items?))?\b",
         r"\b(one|two|three|four|five|six|seven|eight|nine|ten)\s*(?:pieces?|units?|pcs|items?|piece|unit|item)\b",
         r"\b(?:buy|need|order|take|want|get)\s+(one|two|three|four|five|six|seven|eight|nine|ten)\b",
         r"\b(?:what\s+about|how\s+about|what\s+if\s+i\s+take|if\s+i\s+take|if\s+i\s+buy)\s+(one|two|three|four|five|six|seven|eight|nine|ten)\b",
-        r"\b(?:for)\s+(one|two|three|four|five|six|seven|eight|nine|ten)\b",
     ]
 
     ACCEPTANCE_PATTERNS = [
@@ -78,6 +81,13 @@ class IntentClassifier:
         r"\bwhere\s+(?:to\s+)?(?:to\s+)?pay\b",
         r"\bwhere\s+(?:can|do|should|to)\s+(?:i\s+)?(?:pay|checkout)\b",
         r"\bhow\s+(?:can|do|should|to)\s+(?:i\s+)?(?:pay|checkout)\b",
+    ]
+
+    CONDITIONAL_PATTERNS = [
+        r"\b(?:but|however|though|although)\b",
+        r"\b(?:if\s+you\s+can|if\s+possible|if\s+you\s+could|can\s+i\s+get|can\s+you\s+do|can\s+you\s+give|can\s+you\s+make|could\s+you)\b",
+        r"\b(?:too\s+expensive|too\s+costly|too\s+high|costly|expensive|cheaper|less|lower|discount|reduce)\b",
+        r"\b(?:under|below|around|within|budget)\b",
     ]
 
     TRUST_KEYWORDS = [
@@ -107,8 +117,18 @@ class IntentClassifier:
     ]
 
     @classmethod
+    def is_conditional(cls, text: str) -> bool:
+        text_clean = text.lower().strip().replace("’", "'")
+        for pat in cls.CONDITIONAL_PATTERNS:
+            if re.search(pat, text_clean):
+                return True
+        return False
+
+    @classmethod
     def is_acceptance(cls, text: str) -> bool:
         text_clean = text.lower().strip().replace("’", "'")
+        if cls.is_conditional(text_clean):
+            return False
         for pat in cls.ACCEPTANCE_PATTERNS:
             if re.search(pat, text_clean):
                 return True
@@ -117,6 +137,8 @@ class IntentClassifier:
     @classmethod
     def is_payment_inquiry(cls, text: str) -> bool:
         text_clean = text.lower().strip().replace("’", "'")
+        if cls.is_conditional(text_clean):
+            return False
         for pat in cls.PAYMENT_INQUIRY_PATTERNS:
             if re.search(pat, text_clean):
                 return True
@@ -125,6 +147,8 @@ class IntentClassifier:
     @classmethod
     def is_explicit_buy(cls, text: str) -> bool:
         text_clean = text.lower().strip().replace("’", "'")
+        if cls.is_conditional(text_clean):
+            return False
         for pat in cls.EXPLICIT_BUY_PATTERNS:
             if re.search(pat, text_clean):
                 return True
@@ -152,13 +176,23 @@ class IntentClassifier:
                 try:
                     if raw_val in cls.WORD_TO_NUM:
                         val = cls.WORD_TO_NUM[raw_val]
+                        has_explicit_unit = True
                     else:
                         val = int(raw_val)
+                        has_explicit_unit = bool(re.search(r"(?:pieces?|units?|pcs|items?|qty|quantity|packs?|piece|unit|item|pack)\b", match.group(0)))
+
                     if 1 <= val <= 1000:
                         # Guard: If number is followed by price suffixes, don't treat as qty
-                        if not re.search(r"\b" + re.escape(raw_val) + r"\s*(?:rs|rupees|inr|final|per|each|only)", text_lower):
-                            extracted_qty = val
-                            break
+                        if re.search(r"\b" + re.escape(raw_val) + r"\s*(?:rs|rupees|inr|final|per|each|only)", text_lower):
+                            continue
+                        # Guard: If number is preceded by price words ("for 900", "said 900", "at 900", "rs 900"), don't treat as qty
+                        if re.search(r"\b(?:for|at|said|price|cost|rs\.?|inr|₹)\s+" + re.escape(raw_val) + r"\b", text_lower):
+                            continue
+                        # Guard: Without explicit unit words, quantity cannot exceed 50
+                        if not has_explicit_unit and val > 50:
+                            continue
+                        extracted_qty = val
+                        break
                 except ValueError:
                     pass
 
@@ -203,7 +237,12 @@ class IntentClassifier:
         price, qty = cls.extract_price_and_qty(user_text, in_negotiation=in_negotiation)
 
         # 2. Acceptance / Deal Closure Detection
-        if cls.is_acceptance(text_lower) or cls.is_payment_inquiry(text_lower) or any(kw in text_lower for kw in cls.CHECKOUT_KEYWORDS):
+        # Qualified or conditional buy phrases (e.g. "I want to buy but it's too costly")
+        # MUST route to negotiation, NOT checkout!
+        is_acc = cls.is_acceptance(text_lower)
+        is_pay = cls.is_payment_inquiry(text_lower)
+        has_checkout_kw = any(kw in text_lower for kw in cls.CHECKOUT_KEYWORDS)
+        if (is_acc or is_pay or has_checkout_kw) and not cls.is_conditional(text_lower) and price is None:
             return IntentResult(
                 intent="checkout_intent",
                 offered_price=None,
@@ -220,8 +259,13 @@ class IntentClassifier:
                 confidence=0.90,
             )
 
-        # 4. Price Hesitation / Negotiation (including quantity adjustments during negotiation)
-        if price is not None or any(kw in text_lower for kw in cls.PRICE_KEYWORDS) or (in_negotiation and (price is not None or qty is not None)):
+        # 4. Price Hesitation / Negotiation (including conditional buy intent & quantity adjustments)
+        if (
+            price is not None
+            or any(kw in text_lower for kw in cls.PRICE_KEYWORDS)
+            or cls.is_conditional(text_lower)
+            or (in_negotiation and (price is not None or qty is not None))
+        ):
             return IntentResult(
                 intent="price_hesitation",
                 offered_price=price,

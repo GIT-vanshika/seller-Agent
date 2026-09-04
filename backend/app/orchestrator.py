@@ -227,6 +227,53 @@ class AgentOrchestrator:
                     f"Discounts are not available for single units. Total for {requested_qty} unit(s) is ₹{validated_deal.total_payable_amount:.2f}."
                 )
                 can_show_payment = False
+            elif requested_qty > 1:
+                # Commercial Model: Multi-Unit / Volume Deal
+                # Formula:
+                # base_total = listed_price * quantity
+                # volume_discount = seller_policy(quantity)
+                # final_total = base_total - volume_discount
+                # effective_unit_price = final_total / quantity
+                can_show_payment = False
+                base_total = (product.listed_price * Decimal(str(requested_qty))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                bulk_discount_pct = decision.applied_tier_discount
+
+                if bulk_discount_pct is not None:
+                    discount_amt = (base_total * bulk_discount_pct / Decimal("100.0")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    final_total = validated_deal.total_payable_amount
+                    eff_price = validated_deal.effective_unit_price
+                    pct_str = f"{bulk_discount_pct:.0f}%" if bulk_discount_pct % 1 == 0 else f"{bulk_discount_pct}%"
+
+                    response_text = (
+                        f"Multi-unit purchases transition to our authoritative volume discount policy:\n\n"
+                        f"• Base Total: ₹{base_total:.2f} (₹{product.listed_price:.2f} × {requested_qty} units)\n"
+                        f"• Volume Discount ({pct_str}): -₹{discount_amt:.2f}\n"
+                        f"• Final Total: ₹{final_total:.2f}\n"
+                        f"• Effective Unit Price: ₹{eff_price:.2f} per unit\n\n"
+                        f"If you would like to proceed with this purchase, reply 'Ok done' or 'I want to buy', or ask where to pay."
+                    )
+                elif policy.bulk_rules and policy.bulk_rules.tiers:
+                    sorted_tiers = sorted(policy.bulk_rules.tiers, key=lambda t: t.min_quantity)
+                    min_tier = sorted_tiers[0]
+                    min_pct_str = f"{min_tier.discount_percentage:.0f}%" if min_tier.discount_percentage % 1 == 0 else f"{min_tier.discount_percentage}%"
+                    response_text = (
+                        f"Multi-unit purchases transition to our authoritative volume pricing policy.\n\n"
+                        f"Our volume discount tiers for {product.name} begin at {min_tier.min_quantity} units ({min_pct_str} off). "
+                        f"Since {requested_qty} unit(s) does not qualify for a volume discount tier, the standard catalog price of ₹{product.listed_price:.2f} per unit applies:\n"
+                        f"• Base Total: ₹{validated_deal.total_payable_amount:.2f} (₹{product.listed_price:.2f} × {requested_qty} units)\n"
+                        f"• Volume Discount: ₹0.00 (0%)\n"
+                        f"• Final Total: ₹{validated_deal.total_payable_amount:.2f}\n"
+                        f"• Effective Unit Price: ₹{product.listed_price:.2f} per unit\n\n"
+                        f"To unlock volume savings, you can increase your order to at least {min_tier.min_quantity} units, or proceed with {requested_qty} unit(s) at ₹{validated_deal.total_payable_amount:.2f}."
+                    )
+                else:
+                    response_text = (
+                        f"Multi-unit purchases transition to our authoritative volume pricing policy.\n\n"
+                        f"Volume discount tiers are not available for {product.name}. The standard catalog price applies:\n"
+                        f"• Base Total: ₹{validated_deal.total_payable_amount:.2f} (₹{product.listed_price:.2f} × {requested_qty} units)\n"
+                        f"• Final Total: ₹{validated_deal.total_payable_amount:.2f}\n"
+                        f"• Effective Unit Price: ₹{product.listed_price:.2f} per unit"
+                    )
             elif current_round >= max_rounds:
                 # NEGOTIATION FINISHED != BUYER ACCEPTED.
                 # When round reaches the seller's final firm price:
@@ -322,19 +369,15 @@ class AgentOrchestrator:
                             f"• Quantity: {validated_deal.quantity} unit(s)\n"
                             f"• Total Payable Amount: ₹{validated_deal.total_payable_amount:.2f}\n"
                             f"({validated_deal.applied_rule_description})\n\n"
-                            f"Click 'Proceed to Checkout' below to lock in this validated deal."
-                            f"Click 'Pay with Razorpay' below to lock in this validated deal."
+                            f"Click 'Pay with Razorpay' below to complete your checkout."
                         )
                     else:
                         response_text = (
-                            f"Your deal for {product.name} is validated and locked at the listed price!\n"
                             f"Your purchase for {product.name} is confirmed and locked at the catalog listed price!\n\n"
                             f"• Unit Price: ₹{validated_deal.effective_unit_price:.2f}\n"
-                            f"• Quantity: {validated_deal.quantity}\n"
                             f"• Quantity: {validated_deal.quantity} unit(s)\n"
                             f"• Total Amount: ₹{validated_deal.total_payable_amount:.2f}\n\n"
-                            f"Ready to complete checkout with Razorpay."
-                            f"Ready to complete checkout with Razorpay below."
+                            f"Click 'Pay with Razorpay' below to complete your payment."
                         )
                 else:
                     response_text = f"Unable to validate deal for checkout: {validated_deal.validation_message}"

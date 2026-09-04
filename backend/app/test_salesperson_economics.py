@@ -17,7 +17,6 @@ def test_salesperson_economics():
     assert policy_003.target_price == Decimal("2050.00")
     assert policy_003.reservation_price == Decimal("1550.00")
 
-    # ----------------------------------------------------
     # TEST 1: Direct PolicyEngine 7-Round Concession Curve
     # ----------------------------------------------------
     expected_curve = [
@@ -165,3 +164,4 @@ def test_salesperson_economics():
 
 if __name__ == "__main__":
     test_salesperson_economics()
+

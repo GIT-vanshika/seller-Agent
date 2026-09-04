@@ -1143,11 +1143,11 @@ export default function AuraCommerceStorefront() {
                       )}
                     </div>
                   ) : (
-                    /* Confirmed Escrow Order State */
+                    /* Confirmed Order State */
                     <div className="flex flex-col gap-2">
                       <div className="w-full bg-secondary text-[#022c22] py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 shadow-sm font-bold text-xs">
                         <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                        <span>Payment Authorized &amp; Escrow Reserved (₹{formatCurrency(orderResult.total_payable_amount)})</span>
+                        <span>Order Created · Razorpay Order #{orderResult.order_id} (₹{formatCurrency(orderResult.total_payable_amount)})</span>
                       </div>
 
                       <div className="bg-surface-container-low p-2.5 rounded border border-outline-variant/40 text-[11px] flex justify-between">
@@ -1161,7 +1161,7 @@ export default function AuraCommerceStorefront() {
                         </div>
                         <div>
                           <span className="text-on-surface-variant">Status: </span>
-                          <span className="font-data-mono text-secondary font-bold uppercase">{orderResult.status}</span>
+                          <span className="font-data-mono text-secondary font-bold uppercase">ORDER CREATED</span>
                         </div>
                       </div>
                     </div>

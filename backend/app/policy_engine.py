@@ -50,19 +50,65 @@ class PolicyEngine:
         # 2. Negotiable Pricing Mode
         max_rounds = policy.max_negotiation_rounds
 
-        # 2a. Determine Bulk Tier Price if applicable
-        bulk_tier_discount = None
-        bulk_unit_price = None
-        if policy.bulk_rules and policy.bulk_rules.tiers:
-            sorted_tiers = sorted(policy.bulk_rules.tiers, key=lambda t: t.min_quantity, reverse=True)
-            for tier in sorted_tiers:
-                if quantity >= tier.min_quantity:
-                    bulk_tier_discount = tier.discount_percentage
-                    multiplier = Decimal("1.0") - (tier.discount_percentage / Decimal("100.0"))
-                    bulk_unit_price = (listed_price * multiplier).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                    break
+        # -------------------------------------------------------------------------
+        # CASE A: MULTI-UNIT / VOLUME DEAL (quantity > 1)
+        # -------------------------------------------------------------------------
+        # Commercial Rule:
+        # - This is a volume deal.
+        # - DO NOT multiply the 1-unit negotiated price (e.g. ₹900 × 2 ≠ ₹1800).
+        # - DO NOT restart the 1-unit concession curve for multiple units.
+        # - A volume deal invokes the authoritative seller policy volume tiers.
+        # Formula:
+        #   base_total = listed_price * quantity
+        #   volume_discount = seller_policy(quantity)
+        #   final_total = base_total - volume_discount
+        #   effective_unit_price = final_total / quantity
+        # -------------------------------------------------------------------------
+        if quantity > 1:
+            bulk_tier_discount = None
+            if policy.bulk_rules and policy.bulk_rules.tiers:
+                sorted_tiers = sorted(policy.bulk_rules.tiers, key=lambda t: t.min_quantity, reverse=True)
+                for tier in sorted_tiers:
+                    if quantity >= tier.min_quantity:
+                        bulk_tier_discount = tier.discount_percentage
+                        break
 
-        # 2b. Determine Single-Unit Step Price for this round
+            base_total = (listed_price * Decimal(str(quantity))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            if bulk_tier_discount is not None:
+                discount_amt = (base_total * bulk_tier_discount / Decimal("100.0")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                final_total = base_total - discount_amt
+                effective_unit_price = (final_total / Decimal(str(quantity))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            else:
+                effective_unit_price = listed_price
+                final_total = base_total
+
+            effective_unit_price = max(effective_unit_price, reservation_price)
+
+            if offer is not None and offer >= effective_unit_price:
+                return PolicyEngineDecision(
+                    accepted=True,
+                    seller_authorized_price=offer,
+                    round_number=round_number,
+                    max_rounds=max_rounds,
+                    pricing_mode="negotiable",
+                    applied_tier_discount=bulk_tier_discount,
+                    buyer_safe_explanation=f"Offer of ₹{offer:.2f} meets the volume pricing threshold for {quantity} units.",
+                )
+            else:
+                return PolicyEngineDecision(
+                    accepted=False,
+                    seller_authorized_price=effective_unit_price,
+                    round_number=round_number,
+                    max_rounds=max_rounds,
+                    pricing_mode="negotiable",
+                    applied_tier_discount=bulk_tier_discount,
+                    buyer_safe_explanation=f"Volume tier authorized price is ₹{effective_unit_price:.2f}/unit for {quantity} units.",
+                )
+
+        # -------------------------------------------------------------------------
+        # CASE B: SINGLE-UNIT NEGOTIATION (quantity == 1)
+        # -------------------------------------------------------------------------
+        # Determine Single-Unit Step Price for this round
         if policy.concession_schedule:
             # Policy-defined explicit schedule: protects exact authorized step prices
             idx = min(max(1, round_number), max_rounds) - 1
@@ -80,17 +126,9 @@ class PolicyEngine:
                 single_unit_step = (listed_price - (span * progression)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         single_unit_step = max(single_unit_step, target_price, reservation_price)
+        seller_step_price = single_unit_step
 
-        # 2c. Combine Single-Unit Step Price with Quantity Incentives
-        if bulk_unit_price is not None:
-            # If a quantity bulk tier applies, seller authorizes the better price between
-            # the quantity tier price and the single-unit round concession price,
-            # but strictly bounded above the reservation floor
-            seller_step_price = max(min(single_unit_step, bulk_unit_price), reservation_price)
-        else:
-            seller_step_price = single_unit_step
-
-        # 2d. Final Policy Boundary Check (Round >= Max Rounds)
+        # Final Policy Boundary Check (Round >= Max Rounds)
         if round_number >= max_rounds:
             final_firm_price = seller_step_price
             if offer is not None and offer >= final_firm_price:
@@ -100,7 +138,7 @@ class PolicyEngine:
                     round_number=round_number,
                     max_rounds=max_rounds,
                     pricing_mode="negotiable",
-                    applied_tier_discount=bulk_tier_discount,
+                    applied_tier_discount=None,
                     buyer_safe_explanation=f"Offer of ₹{offer:.2f} meets the final negotiation threshold.",
                 )
             else:
@@ -110,11 +148,11 @@ class PolicyEngine:
                     round_number=round_number,
                     max_rounds=max_rounds,
                     pricing_mode="negotiable",
-                    applied_tier_discount=bulk_tier_discount,
+                    applied_tier_discount=None,
                     buyer_safe_explanation=f"We cannot get below ₹{final_firm_price:.2f}. It is against seller policy.",
                 )
 
-        # 2e. Evaluate Offer against Seller Authorized Step Price
+        # Evaluate Offer against Seller Authorized Step Price
         if offer is not None and offer >= seller_step_price:
             return PolicyEngineDecision(
                 accepted=True,
@@ -122,7 +160,7 @@ class PolicyEngine:
                 round_number=round_number,
                 max_rounds=max_rounds,
                 pricing_mode="negotiable",
-                applied_tier_discount=bulk_tier_discount,
+                applied_tier_discount=None,
                 buyer_safe_explanation=f"Offer of ₹{offer:.2f} accepted in round {round_number}.",
             )
         else:
@@ -132,6 +170,6 @@ class PolicyEngine:
                 round_number=round_number,
                 max_rounds=max_rounds,
                 pricing_mode="negotiable",
-                applied_tier_discount=bulk_tier_discount,
+                applied_tier_discount=None,
                 buyer_safe_explanation=f"Offer is below acceptable commercial threshold. Proposed counter-offer is ₹{seller_step_price:.2f}.",
             )

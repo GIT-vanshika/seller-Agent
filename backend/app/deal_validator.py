@@ -144,15 +144,17 @@ class DealConsistencyValidator:
         # Determine the best valid authorized path
         authorized_paths = []
 
-        # Path A: PolicyEngine step concession authorization for this round & quantity
-        authorized_paths.append((authorized_price, "Negotiated Policy Concession"))
-
-        # Path B: Bulk Tier rule authorization if applicable for this quantity
-        if bulk_unit_price is not None and bulk_unit_price >= reservation_price:
-            authorized_paths.append((bulk_unit_price, f"Bulk Tier Pricing (Qty >= {quantity})"))
-
-        # Path C: Standard catalog listed price
-        authorized_paths.append((listed_price, "Standard Catalog Listed Price"))
+        if quantity == 1:
+            # Path A: PolicyEngine step concession authorization for single unit
+            authorized_paths.append((authorized_price, "Negotiated Policy Concession"))
+            # Path C: Standard catalog listed price
+            authorized_paths.append((listed_price, "Standard Catalog Listed Price"))
+        else:
+            # Multi-unit volume deal: governed by authoritative volume tiers, not single-unit curve
+            if bulk_unit_price is not None and bulk_unit_price >= reservation_price:
+                authorized_paths.append((bulk_unit_price, f"Bulk Tier Pricing (Qty >= {quantity})"))
+            else:
+                authorized_paths.append((listed_price, "Standard Catalog Listed Price"))
 
         # Select the lowest unit price strictly authorized by backend pricing paths
         best_authorized_price, applied_path_desc = min(authorized_paths, key=lambda p: p[0])

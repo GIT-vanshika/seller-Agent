@@ -64,8 +64,15 @@ class RazorpayService:
 
         validated_deal: ValidatedDeal = DealConsistencyValidator.validate_deal(policy, validation_req)
 
-        # Check 1: Deal MUST be authorized by PolicyEngine AND valid by DealConsistencyValidator
-        if not decision.accepted or not validated_deal.is_valid:
+        # Check if buyer is checking out at a previously agreed session price
+        is_session_agreed_price = (
+            current_negotiated_unit_price is not None
+            and request.requested_unit_price == current_negotiated_unit_price
+            and request.requested_unit_price >= policy.reservation_price
+        )
+
+        # Check 1: Deal MUST be authorized by PolicyEngine OR agreed in active session AND valid by DealConsistencyValidator
+        if not (decision.accepted or is_session_agreed_price) or not validated_deal.is_valid:
             raise ValueError(f"PRE-CHECKOUT VALIDATION FAILURE: {validated_deal.validation_message}")
 
         # Check 2: Requested price/total MUST match backend DealConsistencyValidator's effective price & total
