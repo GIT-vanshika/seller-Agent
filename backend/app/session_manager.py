@@ -127,16 +127,19 @@ class SessionManager:
         session.updated_at = datetime.now(timezone.utc).isoformat()
         return session
 
-    def set_validated_deal(self, session_id: str, deal: ValidatedDeal) -> SessionState:
+    def set_validated_deal(self, session_id: str, deal: ValidatedDeal, is_agreed: bool = True) -> SessionState:
         session = self._sessions.get(session_id)
         if not session:
             raise KeyError(f"Session {session_id} not found")
 
         session.last_validated_deal = deal
-        if deal.is_valid:
-            session.current_negotiated_unit_price = deal.effective_unit_price
-            session.quantity = deal.quantity
+        session.quantity = deal.quantity
+        session.current_negotiated_unit_price = deal.effective_unit_price
+        if deal.is_valid and is_agreed:
             session.deal_status = "agreed"
+        elif session.negotiation_round > 0:
+            session.deal_status = "negotiating"
+
         session.updated_at = datetime.now(timezone.utc).isoformat()
         return session
 
@@ -178,7 +181,7 @@ class SessionManager:
             tx_status = "validated"
             val_price = session.last_validated_deal.effective_unit_price
             tot_amount = session.last_validated_deal.total_payable_amount
-            val_id = session.last_validated_deal.validated_deal_id
+            val_id = session.last_validated_deal.deal_id
 
         tx_state = TransactionState(
             status=tx_status,

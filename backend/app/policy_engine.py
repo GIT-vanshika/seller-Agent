@@ -33,11 +33,11 @@ class PolicyEngine:
         aspiration_price = policy.aspiration_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         target_price = policy.target_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         reservation_price = policy.reservation_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-        offer = buyer_offer.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        offer = buyer_offer.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if buyer_offer is not None else None
 
         # 1. Fixed Pricing Mode
         if policy.pricing_mode == "fixed":
-            is_accepted = offer >= listed_price
+            is_accepted = (offer >= listed_price) if offer is not None else False
             return PolicyEngineDecision(
                 accepted=is_accepted,
                 seller_authorized_price=listed_price,
@@ -50,26 +50,52 @@ class PolicyEngine:
         # 2. Negotiable Pricing Mode
         max_rounds = policy.max_negotiation_rounds
 
-        # Check Bulk Tier baseline if applicable
+        # 2a. Determine Bulk Tier Price if applicable
         bulk_tier_discount = None
-        bulk_baseline_unit_price = listed_price
+        bulk_unit_price = None
         if policy.bulk_rules and policy.bulk_rules.tiers:
             sorted_tiers = sorted(policy.bulk_rules.tiers, key=lambda t: t.min_quantity, reverse=True)
             for tier in sorted_tiers:
                 if quantity >= tier.min_quantity:
                     bulk_tier_discount = tier.discount_percentage
                     multiplier = Decimal("1.0") - (tier.discount_percentage / Decimal("100.0"))
-                    bulk_baseline_unit_price = (listed_price * multiplier).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    bulk_unit_price = (listed_price * multiplier).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     break
 
-        # Adjust top anchor for bulk order if bulk baseline is lower than listed
-        effective_anchor = min(aspiration_price, bulk_baseline_unit_price)
+        # 2b. Determine Single-Unit Step Price for this round
+        if policy.concession_schedule:
+            # Policy-defined explicit schedule: protects exact authorized step prices
+            idx = min(max(1, round_number), max_rounds) - 1
+            single_unit_step = policy.concession_schedule[idx].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        else:
+            # Dynamic convex Boulware curve: starts from listed_price anchor, concedes slowly at first
+            span = listed_price - target_price
+            if span <= Decimal("0.00") or max_rounds <= 0:
+                single_unit_step = target_price
+            else:
+                # Convex progression: (round / max_rounds) ** 2
+                # Concedes minimally early on, then increases concession toward deadline
+                r_capped = min(max(1, round_number), max_rounds)
+                progression = (Decimal(str(r_capped)) / Decimal(str(max_rounds))) ** 2
+                single_unit_step = (listed_price - (span * progression)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        # Exceeded Max Rounds Check
+        single_unit_step = max(single_unit_step, target_price, reservation_price)
+
+        # 2c. Combine Single-Unit Step Price with Quantity Incentives
+        if bulk_unit_price is not None:
+            # If a quantity bulk tier applies, seller authorizes the better price between
+            # the quantity tier price and the single-unit round concession price,
+            # but strictly bounded above the reservation floor
+            seller_step_price = max(min(single_unit_step, bulk_unit_price), reservation_price)
+        else:
+            seller_step_price = single_unit_step
+
+        # 2d. Exceeded Max Rounds Check
         if round_number > max_rounds:
-            # Hold firm at target_price
-            final_firm_price = max(target_price, reservation_price)
-            if offer >= final_firm_price:
+        # 2d. Final Policy Boundary Check (Round >= Max Rounds)
+        if round_number >= max_rounds:
+            final_firm_price = seller_step_price
+            if offer is not None and offer >= final_firm_price:
                 return PolicyEngineDecision(
                     accepted=True,
                     seller_authorized_price=offer,
@@ -88,21 +114,11 @@ class PolicyEngine:
                     pricing_mode="negotiable",
                     applied_tier_discount=bulk_tier_discount,
                     buyer_safe_explanation=f"Maximum negotiation rounds ({max_rounds}) reached. Our final firm offer is ₹{final_firm_price:.2f}.",
+                    buyer_safe_explanation=f"We cannot get below ₹{final_firm_price:.2f}. It is against seller policy.",
                 )
 
-        # Diminishing Concession Math with Normalized Decay Factor
-        concession_span = effective_anchor - target_price
-        if concession_span <= Decimal("0.00") or max_rounds <= 0:
-            seller_step_price = target_price
-        else:
-            max_decay = Decimal("1.0") - (Decimal("0.55") ** max_rounds)
-            current_decay = Decimal("1.0") - (Decimal("0.55") ** min(round_number, max_rounds))
-            decay_factor = current_decay / max_decay if max_decay > Decimal("0.00") else Decimal("1.0")
-            calculated_step = effective_anchor - (concession_span * decay_factor)
-            seller_step_price = max(calculated_step, target_price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-        # Evaluate Offer against Seller Authorized Step Price
-        if offer >= seller_step_price:
+        # 2e. Evaluate Offer against Seller Authorized Step Price
+        if offer is not None and offer >= seller_step_price:
             return PolicyEngineDecision(
                 accepted=True,
                 seller_authorized_price=offer,
@@ -120,5 +136,5 @@ class PolicyEngine:
                 max_rounds=max_rounds,
                 pricing_mode="negotiable",
                 applied_tier_discount=bulk_tier_discount,
-                buyer_safe_explanation=f"Offer of ₹{offer:.2f} is below acceptable commercial threshold. Proposed counter-offer is ₹{seller_step_price:.2f}.",
+                buyer_safe_explanation=f"Offer is below acceptable commercial threshold. Proposed counter-offer is ₹{seller_step_price:.2f}.",
             )

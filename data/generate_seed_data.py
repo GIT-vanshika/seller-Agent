@@ -194,6 +194,7 @@ for spec in product_specs:
         "reservation_price": spec["res"],
         "batna": "normal_sale",
         "max_negotiation_rounds": spec["rounds"]
+        "max_negotiation_rounds": 7 if spec["mode"] == "negotiable" else 0
     }
     if spec["bulk"]:
         policy["bulk_rules"] = spec["bulk"]

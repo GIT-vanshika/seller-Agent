@@ -35,16 +35,16 @@ Classification rules:
 1. primary_intent MUST be one of:
    - "product_question": Buyer asks about product features, materials, care instructions, specifications, sizing, etc.
    - "trust_concern": Buyer expresses doubt/worry about product reality, authenticity, photo accuracy, reviews, durability, quality.
-   - "price_negotiation": Buyer asks for discount, price reduction, negotiation, lower price, deal, or claims item is expensive.
-   - "purchase_intent": Buyer explicitly states intent to buy or checkout (e.g. "I want to buy this", "ready to pay").
+   - "price_negotiation": Buyer asks for discount, price reduction, negotiation, lower price, deal, proposes an offer (e.g. "Ok 1800", "ok Then 1700?", "I want it 1750 final", "How about 1700?", "1800", "I'll pay 1750"), or claims item is expensive.
+   - "purchase_intent": Buyer explicitly states intent to buy, checkout, or accepts a deal/counter-offer (e.g. "Ok done", "Done", "Deal", "Agreed", "I'll take it", "Take it", "Yes, let's do it", "Let's do it", "I want to buy this", "ready to pay").
    - "clarification": Buyer expresses confusion or asks for explanation of terms/sizing/options.
    - "general_conversation": Greetings, thanks, polite conversational closings.
 
 2. hesitation MUST be one of:
    - "trust": Meaningful doubt about product reality/authenticity/quality/material/appearance.
-   - "price": Concern about price/affordability/discount.
+   - "price": Concern about price/affordability/discount or active price proposal/offer.
    - "both": BOTH trust AND price concerns are present.
-   - "none": No purchase hesitation expressed (e.g. normal product questions or purchase commitment).
+   - "none": No purchase hesitation expressed (e.g. normal product questions or purchase/deal commitment).
 
 3. product_question:
    - If buyer asks an informational question about the product, provide {"question": "<normalized question text>"}.

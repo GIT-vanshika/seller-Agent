@@ -104,6 +104,8 @@ class DealConsistencyValidator:
 
         # Rule 3: Negotiation Round Limit Rule
         if policy.pricing_mode == "negotiable" and request.negotiation_round > policy.max_negotiation_rounds:
+        # Rule 3: Policy Boundary Enforcement (Rounds >= Max Rounds)
+        if policy.pricing_mode == "negotiable" and request.negotiation_round >= policy.max_negotiation_rounds:
             firm_target = authorized_price
             return ValidatedDeal(
                 deal_id=deal_id,
@@ -119,6 +121,21 @@ class DealConsistencyValidator:
                 validation_message=f"Maximum negotiation rounds ({policy.max_negotiation_rounds}) exceeded.",
                 applied_rule_description="Negotiation round limit constraint.",
             )
+            if proposed_price < firm_target and not request.buyer_committed:
+                return ValidatedDeal(
+                    deal_id=deal_id,
+                    product_id=policy.product_id,
+                    quantity=quantity,
+                    listed_price=listed_price,
+                    proposed_unit_price=proposed_price,
+                    effective_unit_price=firm_target,
+                    total_payable_amount=(firm_target * quantity).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+                    pricing_mode=policy.pricing_mode,
+                    is_valid=False,
+                    validation_code="SELLER_POLICY_FLOOR",
+                    validation_message=f"We cannot get below ₹{firm_target:.2f}. It is against seller policy.",
+                    applied_rule_description="Seller pricing policy constraint.",
+                )
 
         # Rule 4: Seller Reservation Floor Safety Check (Internal Security Boundary)
         if proposed_price < reservation_price or authorized_price < reservation_price:

@@ -53,13 +53,13 @@ def run_validator_tests():
     assert len(counters_c) == 5
     print(f"[PASS] Test C: Repeated lowballs maintained controlled counter schedule floored at target (Rs.1750): {counters_c}.")
 
-    # TEST D: Diminishing concessions across rounds
-    # Verify step sizes diminish: (R1 - R2) > (R2 - R3) > (R3 - R4)
+    # TEST D: Strategic salesperson pacing (concedes slowly early, increases meaningfully later)
+    # Verify step sizes grow or remain firm: (R1 - R2) <= (R2 - R3) <= (R3 - R4)
     step1_2 = counters_c[0] - counters_c[1]
     step2_3 = counters_c[1] - counters_c[2]
     step3_4 = counters_c[2] - counters_c[3]
-    assert step1_2 >= step2_3 >= step3_4
-    print(f"[PASS] Test D: Concessions diminish controllably over rounds (Steps: {step1_2:.2f}, {step2_3:.2f}, {step3_4:.2f}).")
+    assert step1_2 <= step2_3 <= step3_4
+    print(f"[PASS] Test D: Strategic salesperson pacing verified: concessions start small and grow meaningfully in later rounds (Steps: {step1_2:.2f}, {step2_3:.2f}, {step3_4:.2f}).")
 
     # TEST I: Fixed Product Negotiation Rejection
     dec_i = PolicyEngine.evaluate_offer(policy_fixed, Decimal("80.00"), round_number=1)

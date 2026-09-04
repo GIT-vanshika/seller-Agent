@@ -26,11 +26,31 @@
     "pricing_mode": "negotiable",
     "listed_price": 2500.0,
     "aspiration_price": 2400.0,
-    "target_price": 1750.0,
+    "target_price": 2050.0,
     "reservation_price": 1550.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 5,
-    "bulk_rules": null
+    "max_negotiation_rounds": 7,
+    "concession_schedule": [
+      2425.0,
+      2350.0,
+      2275.0,
+      2200.0,
+      2150.0,
+      2100.0,
+      2050.0
+    ],
+    "bulk_rules": {
+      "tiers": [
+        {
+          "min_quantity": 2,
+          "discount_percentage": 15.0
+        },
+        {
+          "min_quantity": 3,
+          "discount_percentage": 18.0
+        }
+      ]
+    }
   },
   {
     "product_id": "prod_004",
@@ -40,7 +60,7 @@
     "target_price": 900.0,
     "reservation_price": 800.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 4,
+    "max_negotiation_rounds": 7,
     "bulk_rules": {
       "tiers": [
         {
@@ -66,7 +86,7 @@
     "target_price": 1400.0,
     "reservation_price": 1200.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 3,
+    "max_negotiation_rounds": 7,
     "bulk_rules": null
   },
   {
@@ -99,7 +119,7 @@
     "target_price": 3500.0,
     "reservation_price": 3200.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 5,
+    "max_negotiation_rounds": 7,
     "bulk_rules": null
   },
   {
@@ -110,7 +130,7 @@
     "target_price": 2300.0,
     "reservation_price": 2100.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 4,
+    "max_negotiation_rounds": 7,
     "bulk_rules": {
       "tiers": [
         {
@@ -132,7 +152,7 @@
     "target_price": 750.0,
     "reservation_price": 650.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 3,
+    "max_negotiation_rounds": 7,
     "bulk_rules": null
   },
   {
@@ -165,7 +185,7 @@
     "target_price": 2500.0,
     "reservation_price": 2200.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 4,
+    "max_negotiation_rounds": 7,
     "bulk_rules": null
   },
   {
@@ -176,7 +196,7 @@
     "target_price": 1700.0,
     "reservation_price": 1500.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 4,
+    "max_negotiation_rounds": 7,
     "bulk_rules": {
       "tiers": [
         {
@@ -198,7 +218,7 @@
     "target_price": 1600.0,
     "reservation_price": 1400.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 3,
+    "max_negotiation_rounds": 7,
     "bulk_rules": null
   },
   {
@@ -231,7 +251,7 @@
     "target_price": 3800.0,
     "reservation_price": 3400.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 5,
+    "max_negotiation_rounds": 7,
     "bulk_rules": null
   },
   {
@@ -242,7 +262,7 @@
     "target_price": 1200.0,
     "reservation_price": 1050.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 4,
+    "max_negotiation_rounds": 7,
     "bulk_rules": {
       "tiers": [
         {
@@ -264,7 +284,7 @@
     "target_price": 1850.0,
     "reservation_price": 1600.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 3,
+    "max_negotiation_rounds": 7,
     "bulk_rules": null
   },
   {
@@ -297,7 +317,7 @@
     "target_price": 2900.0,
     "reservation_price": 2600.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 4,
+    "max_negotiation_rounds": 7,
     "bulk_rules": null
   },
   {
@@ -308,7 +328,7 @@
     "target_price": 1000.0,
     "reservation_price": 850.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 4,
+    "max_negotiation_rounds": 7,
     "bulk_rules": {
       "tiers": [
         {
@@ -330,7 +350,7 @@
     "target_price": 1450.0,
     "reservation_price": 1250.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 3,
+    "max_negotiation_rounds": 7,
     "bulk_rules": null
   },
   {
@@ -363,7 +383,7 @@
     "target_price": 1300.0,
     "reservation_price": 1100.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 4,
+    "max_negotiation_rounds": 7,
     "bulk_rules": null
   },
   {
@@ -374,7 +394,7 @@
     "target_price": 650.0,
     "reservation_price": 550.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 3,
+    "max_negotiation_rounds": 7,
     "bulk_rules": {
       "tiers": [
         {
@@ -396,7 +416,7 @@
     "target_price": 2000.0,
     "reservation_price": 1750.0,
     "batna": "normal_sale",
-    "max_negotiation_rounds": 3,
+    "max_negotiation_rounds": 7,
     "bulk_rules": null
   }
 ]

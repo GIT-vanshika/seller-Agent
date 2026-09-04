@@ -24,6 +24,9 @@ class Evidence(BaseModel):
     source: EvidenceSource = Field(..., description="Restricted evidence source category")
     label: str
     content: str
+    image_url: Optional[str] = None
+    rating: Optional[float] = None
+    badge: Optional[str] = None
 
 
 class BulkTier(BaseModel):
@@ -47,6 +50,9 @@ class SellerPolicy(BaseModel):
     batna: BATNAType = Field(default="normal_sale", description="Best Alternative To a Negotiated Agreement")
     bulk_rules: Optional[BulkRule] = None
     max_negotiation_rounds: int = Field(..., ge=0, description="Max negotiation rounds (0 for fixed)")
+    concession_schedule: Optional[List[Decimal]] = Field(
+        default=None, description="Optional explicit round-by-round authorized single-unit price schedule"
+    )
 
     @model_validator(mode="after")
     def validate_pricing_consistency(self) -> "SellerPolicy":
@@ -64,6 +70,25 @@ class SellerPolicy(BaseModel):
                 raise ValueError("target_price cannot exceed aspiration_price")
             if self.aspiration_price > self.listed_price:
                 raise ValueError("aspiration_price cannot exceed listed_price")
+
+            if self.concession_schedule is not None:
+                if len(self.concession_schedule) != self.max_negotiation_rounds:
+                    raise ValueError(
+                        f"concession_schedule length ({len(self.concession_schedule)}) must equal max_negotiation_rounds ({self.max_negotiation_rounds})"
+                    )
+                prev = self.listed_price
+                for step_price in self.concession_schedule:
+                    if step_price > prev:
+                        raise ValueError(f"concession_schedule steps must be non-increasing: {self.concession_schedule}")
+                    if step_price < self.reservation_price:
+                        raise ValueError(
+                            f"concession_schedule step ({step_price}) cannot be below reservation_price ({self.reservation_price})"
+                        )
+                    prev = step_price
+                if self.concession_schedule[-1] < self.target_price:
+                    raise ValueError(
+                        f"Final concession_schedule step ({self.concession_schedule[-1]}) cannot be below target_price ({self.target_price})"
+                    )
 
         # Validate that EVERY configured bulk tier respects the reservation price floor
         if self.bulk_rules is not None:

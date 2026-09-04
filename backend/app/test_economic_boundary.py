@@ -150,20 +150,21 @@ def run_economic_boundary_tests():
     # ------------------------------------------------------------------
     # Case 9: Attempt to change quantity after negotiation
     # ------------------------------------------------------------------
-    # Negotiating single unit at target Rs.1750, then requesting 100 units
-    dec_9 = PolicyEngine.evaluate_offer(policy_003, buyer_offer=Decimal("1750.00"), round_number=5, quantity=100)
+    # Negotiating single unit at target, then requesting 100 units
+    target_p3 = policy_003.target_price
+    dec_9 = PolicyEngine.evaluate_offer(policy_003, buyer_offer=target_p3, round_number=5, quantity=100)
     req_9 = DealValidationRequest(
         product_id="prod_003",
         quantity=100,
-        proposed_unit_price=Decimal("1750.00"),
+        proposed_unit_price=target_p3,
         seller_authorized_price=dec_9.seller_authorized_price,
         negotiation_round=5,
     )
     val_9 = DealConsistencyValidator.validate_deal(policy_003, req_9)
     assert val_9.is_valid
     assert val_9.quantity == 100
-    assert val_9.total_payable_amount == Decimal("175000.00")
-    print("[PASS] Case 9: Quantity change re-evaluated and validated for exact quantity (Rs.175,000.00).")
+    assert val_9.total_payable_amount == target_p3 * 100
+    print(f"[PASS] Case 9: Quantity change re-evaluated and validated for exact quantity (Rs.{val_9.total_payable_amount:.2f}).")
 
     # ------------------------------------------------------------------
     # Case 10: Attempt to reuse single-unit negotiated deal for bulk quantity

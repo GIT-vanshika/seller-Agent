@@ -21,6 +21,8 @@ def run_product_qa_tests():
     ans_mat1 = ProductQAService.answer_product_question(prod_003, ev_mat1, assess_mat1, "Is this pure silk?")
     assert "According to the seller catalog description" in ans_mat1
     assert "verified" not in ans_mat1.lower()
+    assert "verified pure silk" not in ans_mat1.lower()
+    assert "verified" not in ans_mat1.split("\n\n")[0].lower()
     assert "independently confirmed" not in ans_mat1.lower()
     print("[PASS] Test 1: Material question cites catalog description without false 'verified' claim.")
 

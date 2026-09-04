@@ -4,152 +4,187 @@
     "product_id": "prod_001",
     "type": "image",
     "source": "seller_marketing",
-    "label": "Seller catalog photo",
-    "content": "Official studio photo of Premium Butter Cookies."
+    "label": "Seller catalog & packaging",
+    "content": "Official packaging and back nutrition specification of Premium Butter Cookies.",
+    "image_url": "/images/products/prod_001/prod_001_box_front.jpg"
   },
   {
     "id": "ev_002",
     "product_id": "prod_001",
     "type": "text",
     "source": "seller_marketing",
-    "label": "Seller specifications",
-    "content": "Product specifications for Premium Butter Cookies."
+    "label": "Seller specifications & ingredients",
+    "content": "100% vegetarian egg-free bakery formulation with Amul butter, wheat flour, and milk solids. FSSAI certified.",
+    "image_url": "/images/products/prod_001/prod_001_box_back.jpg"
   },
   {
     "id": "ev_003",
     "product_id": "prod_001",
     "type": "review",
     "source": "customer_experience",
-    "label": "Customer review",
-    "content": "Customer review commenting on quality and packaging of Premium Butter Cookies."
+    "label": "Customer review (★ 4.2 · Most Reordered)",
+    "content": "Verified Customer Review (Rating: 4.2/5 · Most Reordered): 'Live life at its crunchiest with the perfect bite of crunchy delight. High repeat purchase rate for family tea time.'",
+    "rating": 4.2,
+    "badge": "Most Reordered",
+    "image_url": "/images/products/prod_001/prod_001_bowl_closeup.jpg"
   },
   {
     "id": "ev_004",
     "product_id": "prod_002",
     "type": "image",
     "source": "seller_marketing",
-    "label": "Seller catalog photo",
-    "content": "Official studio photo of Gourmet Vanilla Ice Cream."
+    "label": "Seller packaging & tub visual",
+    "content": "Official Vadilal Gourmet Vanilla Milk Ice Cream tub packaging with batch QR code.",
+    "image_url": "/images/products/prod_002/prod_002_tub_open.png"
   },
   {
     "id": "ev_005",
     "product_id": "prod_002",
     "type": "text",
     "source": "seller_marketing",
-    "label": "Seller specifications",
-    "content": "Product specifications for Gourmet Vanilla Ice Cream."
+    "label": "Seller lid specifications",
+    "content": "Premium Vanilla rich milk ice cream formulation, pure dairy ingredients, FSSAI certified.",
+    "image_url": "/images/products/prod_002/prod_002_lid_art.png"
   },
   {
     "id": "ev_006",
     "product_id": "prod_002",
     "type": "review",
     "source": "customer_experience",
-    "label": "Customer review",
-    "content": "Customer review commenting on quality and packaging of Gourmet Vanilla Ice Cream."
+    "label": "Verified customer rating (★ 4.4)",
+    "content": "Verified Customer Rating (★ 4.4/5.0 · Pure Milk Ice Cream Scoop): Real dairy texture with dense Madagascar vanilla bean creaminess and zero icy crystallization.",
+    "rating": 4.4,
+    "image_url": "/images/products/prod_002/prod_002_waffle_cone_evidence.png"
   },
   {
     "id": "ev_007",
     "product_id": "prod_003",
     "type": "image",
     "source": "seller_marketing",
-    "label": "Seller catalog photo",
-    "content": "High-resolution catalog photo of Silk Designer Dress."
+    "label": "Studio model archival photo",
+    "content": "High-resolution studio catalog capture of sage green Mulberry Silk Designer Dress with hand-embroidered neckline.",
+    "image_url": "/images/products/prod_003/prod_003_studio_front.png"
   },
   {
     "id": "ev_008",
     "product_id": "prod_003",
-    "type": "video",
+    "type": "image",
     "source": "seller_reality",
-    "label": "Seller-provided reality video",
-    "content": "Unedited video clip showing fabric texture and natural lighting view of Silk Designer Dress."
+    "label": "Showroom mannequin zari detail",
+    "content": "Unedited boutique display capture showing metallic zari embroidery, delicate border scallops, and natural silk luster.",
+    "image_url": "/images/products/prod_003/prod_003_mannequin_detail.png"
   },
   {
     "id": "ev_009",
     "product_id": "prod_003",
     "type": "review",
     "source": "customer_experience",
-    "label": "Customer review",
-    "content": "Customer review: 'The silk fabric quality is great and matches the video clip accurately.'"
+    "label": "Verified customer rating (★ 3.9)",
+    "content": "Verified Customer Rating (★ 3.9/5.0): Handcrafted pure silk kurti with matching palazzo and lightweight organza dupatta.",
+    "rating": 3.9,
+    "image_url": "/images/products/prod_003/prod_003_mannequin_insitu.png"
   },
   {
     "id": "ev_010",
     "product_id": "prod_003",
     "type": "image",
     "source": "customer_experience",
-    "label": "Customer-provided image",
-    "content": "Customer photo showing Silk Designer Dress in real-world use."
+    "label": "Boutique floor reality verification",
+    "content": "Showroom physical floor inspection verifying true sage green hue and drape under ambient interior lighting.",
+    "image_url": "/images/products/prod_003/prod_003_mannequin_insitu.png"
   },
   {
     "id": "ev_011",
     "product_id": "prod_004",
     "type": "image",
     "source": "seller_marketing",
-    "label": "Seller catalog photo",
-    "content": "Official studio photo of Handcrafted Ceramic Vase Set."
+    "label": "Studio ceramic donut pair with pampas",
+    "content": "Official studio photograph of the Handcrafted Donut Ceramic Vase Set in textured off-white clay with pampas grass.",
+    "image_url": "/images/products/prod_004/prod_004_floor_pair.jpg"
   },
   {
     "id": "ev_012",
     "product_id": "prod_004",
-    "type": "text",
+    "type": "image",
     "source": "seller_marketing",
-    "label": "Seller specifications",
-    "content": "Product specifications for Handcrafted Ceramic Vase Set."
+    "label": "Speckled clay porosity macro",
+    "content": "High-magnification microscopic texture capture showing tactile porous slip and natural mineral speckles.",
+    "image_url": "/images/products/prod_004/prod_004_texture_macro.png"
   },
   {
     "id": "ev_013",
     "product_id": "prod_004",
     "type": "review",
     "source": "customer_experience",
-    "label": "Customer review",
-    "content": "Customer review commenting on quality and packaging of Handcrafted Ceramic Vase Set."
+    "label": "Verified customer review (★ 4.3)",
+    "content": "Verified Customer Review (Rating: 4.3/5.0): 'Good quality, beautiful, good packaging and awesome look! Fits my living space perfectly.'",
+    "rating": 4.3,
+    "image_url": "/images/products/prod_004/prod_004_customer_display.png"
   },
   {
     "id": "ev_014",
     "product_id": "prod_004",
-    "type": "video",
+    "type": "image",
     "source": "seller_reality",
-    "label": "Seller reality inspection video",
-    "content": "Live unboxing video clip showing dimensions and color of Handcrafted Ceramic Vase Set."
+    "label": "Unboxing & custom foam packaging inspection",
+    "content": "Physical packaging unboxing verification confirming molded protective foam, bubble wrapping, and fracture-free delivery guarantee.",
+    "image_url": "/images/products/prod_004/prod_004_unboxing_packaging.png"
   },
   {
     "id": "ev_015",
     "product_id": "prod_005",
     "type": "image",
     "source": "seller_marketing",
-    "label": "Seller catalog photo",
-    "content": "Studio catalog photo of Embroidered Linen Shirt."
+    "label": "Studio model archival photo",
+    "content": "Official studio catalog photo of seafoam green breathable linen shirt with camp collar and botanical threadwork.",
+    "image_url": "/images/products/prod_005/prod_005_studio_front.png"
   },
   {
     "id": "ev_016",
     "product_id": "prod_005",
-    "type": "text",
-    "source": "seller_marketing",
-    "label": "Seller promotional description",
-    "content": "Seller description highlighting fabric and features of Embroidered Linen Shirt."
+    "type": "image",
+    "source": "seller_reality",
+    "label": "100% Organic slub linen weave & stitch macro",
+    "content": "High-magnification weave inspection confirming pure slub flax linen yarn, neat buttonhole stitching, and plant-motif embroidery.",
+    "image_url": "/images/products/prod_005/prod_005_weave_macro.jpg"
+  },
+  {
+    "id": "ev_016_b",
+    "product_id": "prod_005",
+    "type": "review",
+    "source": "customer_experience",
+    "label": "Verified customer rating (★ 4.0)",
+    "content": "Verified Customer Rating (★ 4.0/5.0): Relaxed fit resort wear shirt with breathable open-weave comfort and natural drape.",
+    "rating": 4.0,
+    "image_url": "/images/products/prod_005/prod_005_outdoor_sunlight.jpg"
   },
   {
     "id": "ev_017",
     "product_id": "prod_006",
     "type": "image",
     "source": "seller_marketing",
-    "label": "Seller catalog photo",
-    "content": "Official studio photo of Organic Dark Chocolate Bar."
+    "label": "Packaging box studio photo",
+    "content": "Official box packaging of LuvIt Cocoa Crush Dark Compound Baking Chocolate (500g, no preservatives).",
+    "image_url": "/images/products/prod_006/prod_006_box_front.jpg"
   },
   {
     "id": "ev_018",
     "product_id": "prod_006",
-    "type": "text",
+    "type": "image",
     "source": "seller_marketing",
-    "label": "Seller specifications",
-    "content": "Product specifications for Organic Dark Chocolate Bar."
+    "label": "Ingredients & nutrition formulation",
+    "content": "Official formulation with 18% cocoa solids, pure cocoa powder, energy 524 kcal per 100g.",
+    "image_url": "/images/products/prod_006/prod_006_ingredients.jpg"
   },
   {
     "id": "ev_019",
     "product_id": "prod_006",
     "type": "review",
     "source": "customer_experience",
-    "label": "Customer review",
-    "content": "Customer review commenting on quality and packaging of Organic Dark Chocolate Bar."
+    "label": "Verified customer review (★ 4.4)",
+    "content": "Verified Customer Review (Rating: 4.4/5.0): 'Awesome taste, silky texture, loved it! Perfect for baking and melting.'",
+    "rating": 4.4,
+    "image_url": "/images/products/prod_006/prod_006_unwrapped_slab.png"
   },
   {
     "id": "ev_020",
