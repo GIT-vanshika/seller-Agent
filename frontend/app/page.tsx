@@ -420,7 +420,6 @@ export default function AuraCommerceStorefront() {
     }
   };
 
-  const isDealAgreed = activeDealStatus === "agreed" && activeDeal?.is_valid;
   const isDealAgreed = Boolean(canShowPayment && activeDeal?.is_valid);
   const isNegotiating = activeRound > 0 || activeDealStatus === "negotiating";
 
@@ -1000,122 +999,7 @@ export default function AuraCommerceStorefront() {
                   </div>
                 ))}
 
-                {/* STAGE 3: IN-STREAM COMMERCIAL REVIEW DESK (WARM AMBER STITCH ACCENT) */}
-                {activeDeal && !isDealAgreed && (
-                  <div className="relative flex flex-col gap-3">
-                    {/* Timeline Pin (Amber) */}
-                    <div className="absolute -left-[31px] top-2 w-3.5 h-3.5 rounded-full bg-surface border-2 border-tertiary shadow-[0_0_8px_#fbbf24]"></div>
 
-                    <div className="flex flex-col bg-surface-container-lowest border-2 border-amber-500/40 rounded-xl p-4 shadow-md relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 rounded-full blur-3xl -z-10 pointer-events-none"></div>
-
-                      {/* Module Header */}
-                      <div className="flex items-center justify-between pb-3 border-b border-outline-variant/40">
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[18px] text-amber-400">balance</span>
-                          <div>
-                            <h3 className="font-label-md text-xs uppercase tracking-widest text-on-surface font-bold">
-                              Commercial Review · Multi-Unit Leverage
-                            </h3>
-                            <p className="font-body-sm text-[11px] text-on-surface-variant">
-                              Autonomous Studio Merchant Clearance Protocol
-                            </p>
-                          </div>
-                        </div>
-                        <span className="font-data-mono-sm text-[11px] uppercase px-2 py-0.5 rounded bg-[#331c0a] text-amber-300 border border-amber-500/40 font-semibold">
-                          Round {activeRound} / 5
-                        </span>
-                      </div>
-
-                      {/* Numerical Arbitrage Table */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 py-3.5 border-b border-outline-variant/40">
-                        <div className="flex flex-col">
-                          <span className="font-label-md text-[10px] uppercase tracking-wider text-on-surface-variant">
-                            Listed Unit
-                          </span>
-                          <span className="font-data-mono text-sm font-medium text-on-surface-variant line-through mt-0.5 tabular-nums">
-                            ₹{formatCurrency(activeDeal.listed_price)}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-col">
-                          <span className="font-label-md text-[10px] uppercase tracking-wider text-on-surface-variant">
-                            Requested Bid
-                          </span>
-                          <span className="font-data-mono text-sm font-medium text-on-surface mt-0.5 tabular-nums">
-                            {lastBuyerOfferText || `₹${formatCurrency(activeDeal.proposed_unit_price)}`}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-col">
-                          <span className="font-label-md text-[10px] uppercase tracking-wider text-on-surface-variant">
-                            Quantity Leverage
-                          </span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <button
-                              onClick={() => handleSendMessage(activeDeal.quantity > 2 ? `What about ${activeDeal.quantity - 1}?` : "1 piece")}
-                              disabled={activeDeal.quantity <= 1 || isSending}
-                              className="w-5 h-5 rounded bg-surface-container flex items-center justify-center font-bold text-xs border border-outline-variant/60 cursor-pointer disabled:opacity-40 hover:bg-surface-container-high"
-                            >
-                              −
-                            </button>
-                            <span className="font-data-mono text-sm font-semibold text-secondary tabular-nums">
-                              {activeDeal.quantity} Units
-                            </span>
-                            <button
-                              onClick={() => handleSendMessage(`Can you do better if I take ${activeDeal.quantity + 1}?`)}
-                              disabled={isSending}
-                              className="w-5 h-5 rounded bg-surface-container flex items-center justify-center font-bold text-xs border border-outline-variant/60 cursor-pointer hover:bg-surface-container-high"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col bg-[#24170a] p-2 rounded border border-amber-500/30">
-                          <span className="font-label-md text-[9px] uppercase tracking-wider text-amber-300 font-bold">
-                            Equilibrium Price
-                          </span>
-                          <span className="font-data-mono text-base font-bold text-on-surface mt-0.5 tabular-nums">
-                            ₹{formatCurrency(activeDeal.effective_unit_price)}
-                            <span className="text-[10px] font-normal text-on-surface-variant">/unit</span>
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Realized Savings Callout */}
-                      <div className="pt-3 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[15px] text-secondary">trending_down</span>
-                          <span className="font-body-sm text-on-surface-variant font-medium">
-                            Net Realized Savings:
-                          </span>
-                        </div>
-                        <span className="font-data-mono text-sm font-bold text-secondary tabular-nums">
-                          ₹{formatCurrency(calculateSavings(activeDeal))} ({activeDeal.applied_rule_description || "Volume Tier"})
-                        </span>
-                      </div>
-
-                      {/* Fast Action Buttons */}
-                      <div className="mt-3 flex gap-2.5">
-                        <button
-                          onClick={() => handleSendMessage("Ok done")}
-                          disabled={isSending}
-                          className="flex-1 bg-white text-black py-2 px-3 rounded-lg font-label-md text-xs uppercase font-semibold cursor-pointer hover:bg-[#eae7e7] transition-colors shadow-sm"
-                        >
-                          Accept Counter ₹{formatCurrency(activeDeal.total_payable_amount)}
-                        </button>
-                        <button
-                          onClick={() => handleSendMessage(`Can you do better if I take ${activeDeal.quantity + 1}?`)}
-                          disabled={isSending}
-                          className="bg-surface-container border border-outline-variant/60 text-on-surface py-2 px-3 rounded-lg font-label-md text-xs uppercase font-semibold cursor-pointer hover:bg-surface-container-high"
-                        >
-                          Ask for {activeDeal.quantity + 1} Units
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* STAGE 4: VALIDATED DEAL CERTIFICATE (IN CHAT DOSSIER SUMMARY) */}
                 {isDealAgreed && activeDeal && (

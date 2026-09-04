@@ -90,8 +90,6 @@ class PolicyEngine:
         else:
             seller_step_price = single_unit_step
 
-        # 2d. Exceeded Max Rounds Check
-        if round_number > max_rounds:
         # 2d. Final Policy Boundary Check (Round >= Max Rounds)
         if round_number >= max_rounds:
             final_firm_price = seller_step_price
@@ -113,7 +111,6 @@ class PolicyEngine:
                     max_rounds=max_rounds,
                     pricing_mode="negotiable",
                     applied_tier_discount=bulk_tier_discount,
-                    buyer_safe_explanation=f"Maximum negotiation rounds ({max_rounds}) reached. Our final firm offer is ₹{final_firm_price:.2f}.",
                     buyer_safe_explanation=f"We cannot get below ₹{final_firm_price:.2f}. It is against seller policy.",
                 )
 

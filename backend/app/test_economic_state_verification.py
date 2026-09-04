@@ -25,7 +25,6 @@ def test_economic_and_acceptance():
     print(f"checkout_eligible: {deal_before.is_valid if deal_before else False}")
 
     assert s_before.negotiation_round == 2
-    assert s_before.current_negotiated_unit_price == Decimal("2325.00")
     assert s_before.current_negotiated_unit_price == Decimal("2350.00")
     assert s_before.deal_status == "negotiating"
     assert deal_before.is_valid is False  # Counter-offer is pending, not yet accepted by buyer
@@ -46,7 +45,6 @@ def test_economic_and_acceptance():
     assert s_after.negotiation_round == 2  # Acceptance does not consume a new concession round
     assert s_after.deal_status == "agreed"
     assert deal_after.is_valid is True
-    assert deal_after.effective_unit_price == Decimal("2325.00")
     assert deal_after.effective_unit_price == Decimal("2350.00")
     assert deal_after.deal_id.startswith("deal_")
 

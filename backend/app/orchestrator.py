@@ -102,8 +102,6 @@ class AgentOrchestrator:
         primary = intent_decision.primary_intent
         hesitation = intent_decision.hesitation
 
-        # Natural acceptance phrases map directly to purchase_intent
-        if is_acceptance_phrase or intent_res.intent == "checkout_intent":
         # Natural acceptance phrases or payment inquiries map directly to purchase_intent
         if is_acceptance_phrase or is_payment_inquiry or intent_res.intent == "checkout_intent":
             primary = "purchase_intent"
@@ -210,12 +208,10 @@ class AgentOrchestrator:
             # Update Session State
             session = session_db.record_negotiation_step(
                 session_id=session.session_id,
-                agreed_price=validated_deal.effective_unit_price if is_deal_accepted else None,
                 agreed_price=validated_deal.effective_unit_price if (is_deal_accepted and current_round < max_rounds) else None,
                 quantity=requested_qty,
                 increment_round=(policy.pricing_mode != "fixed"),
             )
-            session = session_db.set_validated_deal(session.session_id, validated_deal, is_agreed=is_deal_accepted)
             # Establish the authoritative counter / firm price in session
             session.current_negotiated_unit_price = validated_deal.effective_unit_price
             session = session_db.set_validated_deal(
@@ -253,28 +249,19 @@ class AgentOrchestrator:
                 # Seller accepts buyer's offer, but buyer has not yet given explicit purchase commitment
                 can_show_payment = False
                 response_text = (
-                    f"Great news! Your offer/requested terms for {product.name} have been approved.\n"
                     f"Great news! Your offer for {product.name} has been approved.\n"
                     f"• Effective Unit Price: ₹{validated_deal.effective_unit_price:.2f}\n"
                     f"• Quantity: {validated_deal.quantity}\n"
                     f"• Total Payable Amount: ₹{validated_deal.total_payable_amount:.2f}\n"
                     f"({validated_deal.applied_rule_description})\n\n"
-                    f"Click 'Proceed to Checkout' below to lock in this validated deal."
                     f"To complete your purchase, reply 'Ok done' or 'I want to buy', or ask where to pay!"
                 )
             else:
-                if validated_deal.validation_code == "EXCEEDED_MAX_ROUNDS":
                 can_show_payment = False
                 if offered_price is not None:
                     response_text = (
-                        f"We have reached the maximum negotiation rounds for this item. "
-                        f"Our final firm deal is ₹{validated_deal.effective_unit_price:.2f} per unit "
-                        f"(Total: ₹{validated_deal.total_payable_amount:.2f} for {requested_qty} unit(s))."
-                    )
-                elif offered_price is not None:
-                    response_text = (
                         f"Your offer of ₹{offered_price:.2f} is below our acceptable commercial range for {product.name}. "
-                        f"Our counter-offer for this round is ₹{validated_deal.effective_unit_price:.2f} per unit "
+                        f"Our counter-offer is ₹{validated_deal.effective_unit_price:.2f} per unit "
                         f"(Total: ₹{validated_deal.total_payable_amount:.2f} for {requested_qty} unit(s))."
                     )
                 else:
@@ -288,14 +275,10 @@ class AgentOrchestrator:
             has_active_counter = (
                 session.negotiation_round > 0 and
                 (session.current_negotiated_unit_price is not None or
-                 (session.last_validated_deal is not None and session.last_validated_deal.is_valid))
                  (session.last_validated_deal is not None and session.last_validated_deal.effective_unit_price is not None))
             )
 
             # State-Aware Acceptance Guard:
-            # If buyer specifically sends an acceptance phrase ("Ok done", "Deal", "Agreed")
-            # WITHOUT an active negotiation counter-offer, do NOT manufacture a price or deal.
-            if is_acceptance_phrase and not has_active_counter:
             # If buyer sends a bare acceptance token ("Ok done", "Deal", "Agreed")
             # WITHOUT an active negotiation counter-offer on a negotiable product,
             # do NOT manufacture a price or deal.
@@ -323,7 +306,6 @@ class AgentOrchestrator:
                 can_show_payment = validated_deal.is_valid
 
                 if validated_deal.is_valid:
-                    if has_active_counter:
                     if is_payment_inquiry:
                         response_text = (
                             f"Deal confirmed! You have accepted our offer for {product.name}.\n"

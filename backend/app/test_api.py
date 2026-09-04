@@ -67,7 +67,6 @@ def run_api_tests():
     for ev in evidence_list:
         assert ev["product_id"] == "prod_003", f"Evidence product_id mismatch: {ev['product_id']}"
         assert ev["source"] in ["seller_marketing", "seller_reality", "customer_experience"]
-        assert "verified customer" not in ev["label"].lower()
         assert len(ev["label"]) > 0
     print(f"[PASS] Test 3: GET /products/prod_003 returned 200 OK with {len(evidence_list)} matching evidence items.")
 

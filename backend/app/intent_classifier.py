@@ -203,7 +203,6 @@ class IntentClassifier:
         price, qty = cls.extract_price_and_qty(user_text, in_negotiation=in_negotiation)
 
         # 2. Acceptance / Deal Closure Detection
-        if cls.is_acceptance(text_lower) or any(kw in text_lower for kw in cls.CHECKOUT_KEYWORDS):
         if cls.is_acceptance(text_lower) or cls.is_payment_inquiry(text_lower) or any(kw in text_lower for kw in cls.CHECKOUT_KEYWORDS):
             return IntentResult(
                 intent="checkout_intent",

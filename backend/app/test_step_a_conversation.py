@@ -132,7 +132,6 @@ def run_step_a_tests():
         assert res_acc.intent == "purchase_intent", f"Failed for '{phrase}', intent was {res_acc.intent}"
         assert res_acc.validated_deal is not None, f"Deal was None for '{phrase}'"
         assert res_acc.validated_deal.is_valid is True, f"Deal was invalid for '{phrase}'"
-        assert res_acc.validated_deal.effective_unit_price == Decimal("2400.00"), f"Price mismatch for '{phrase}'"
         assert res_acc.validated_deal.effective_unit_price == Decimal("2425.00"), f"Price mismatch for '{phrase}'"
         assert "Deal confirmed" in res_acc.message or "locked" in res_acc.message
 
@@ -145,7 +144,6 @@ def run_step_a_tests():
     AgentOrchestrator.process_user_message(sess_iso, "prod_003", "Can I get for 1800?")
     iso_p3 = session_db.get_session(sess_iso)
     assert iso_p3.negotiation_round == 1
-    assert iso_p3.current_negotiated_unit_price == Decimal("2400.00")
     assert iso_p3.current_negotiated_unit_price == Decimal("2425.00")
 
     # Switch to prod_001 (cookies, fixed price 100)

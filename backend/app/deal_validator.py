@@ -102,25 +102,9 @@ class DealConsistencyValidator:
                     applied_rule_description="Fixed pricing mode policy constraint.",
                 )
 
-        # Rule 3: Negotiation Round Limit Rule
-        if policy.pricing_mode == "negotiable" and request.negotiation_round > policy.max_negotiation_rounds:
         # Rule 3: Policy Boundary Enforcement (Rounds >= Max Rounds)
         if policy.pricing_mode == "negotiable" and request.negotiation_round >= policy.max_negotiation_rounds:
             firm_target = authorized_price
-            return ValidatedDeal(
-                deal_id=deal_id,
-                product_id=policy.product_id,
-                quantity=quantity,
-                listed_price=listed_price,
-                proposed_unit_price=proposed_price,
-                effective_unit_price=firm_target,
-                total_payable_amount=(firm_target * quantity).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
-                pricing_mode=policy.pricing_mode,
-                is_valid=False,
-                validation_code="EXCEEDED_MAX_ROUNDS",
-                validation_message=f"Maximum negotiation rounds ({policy.max_negotiation_rounds}) exceeded.",
-                applied_rule_description="Negotiation round limit constraint.",
-            )
             if proposed_price < firm_target and not request.buyer_committed:
                 return ValidatedDeal(
                     deal_id=deal_id,
@@ -151,7 +135,7 @@ class DealConsistencyValidator:
                 is_valid=False,
                 validation_code="EXCEEDS_RESERVATION_FLOOR",
                 validation_message="Proposed offer is below acceptable commercial range.",
-                applied_rule_description="Seller reservation price floor constraint.",
+                applied_rule_description="Seller policy pricing constraint.",
             )
 
         # Rule 5: Explicit Authorized Pricing Path Resolution (No arbitrary 'minimum candidate wins'!)
@@ -161,7 +145,7 @@ class DealConsistencyValidator:
         authorized_paths = []
 
         # Path A: PolicyEngine step concession authorization for this round & quantity
-        authorized_paths.append((authorized_price, f"Negotiated Policy Concession (Round {request.negotiation_round})"))
+        authorized_paths.append((authorized_price, "Negotiated Policy Concession"))
 
         # Path B: Bulk Tier rule authorization if applicable for this quantity
         if bulk_unit_price is not None and bulk_unit_price >= reservation_price:

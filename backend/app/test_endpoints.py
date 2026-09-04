@@ -48,7 +48,6 @@ def run_hardened_demonstration_suite():
     # ------------------------------------------------------------------
     print("\n--- TEST C: Repeated Lowballs Across All Rounds ---")
     sess_c = "sess_repeated_lowball"
-    for r in range(1, 6):
     for r in range(1, 8):
         res_c = client.post("/chat", json={"session_id": sess_c, "product_id": "prod_003", "message": f"Turn {r}: I offer 1000 rs"})
         assert res_c.status_code == 200
@@ -62,19 +61,16 @@ def run_hardened_demonstration_suite():
     # ------------------------------------------------------------------
     print("\n--- TEST D: Gradually Improving Buyer ---")
     sess_d = "sess_improving_buyer"
-    offers_d = ["1800", "1850", "1900", "1950", "2050"]
     offers_d = ["1800", "1850", "1900", "1950", "2000", "2025", "2050"]
     for turn, off in enumerate(offers_d, 1):
         res_d = client.post("/chat", json={"session_id": sess_d, "product_id": "prod_003", "message": f"Turn {turn}: Can I pay {off} rs?"})
         assert res_d.status_code == 200
         data_d = res_d.json()
-        if turn < 5:
         if turn < 7:
             assert data_d["validated_deal"]["is_valid"] is False
         else:
             assert data_d["validated_deal"]["is_valid"] is True
             assert Decimal(str(data_d["validated_deal"]["effective_unit_price"])) == Decimal("2050.00")
-    print("Result: Seller followed controlled concession curve; accepted offer when it met seller target (Rs.2050) on round 5.")
     print("Result: Seller followed controlled concession curve; accepted offer when it met seller target (Rs.2050) on round 7.")
 
     # ------------------------------------------------------------------
@@ -155,8 +151,6 @@ def run_hardened_demonstration_suite():
     # REGRESSION CHECK: Valid Pre-Checkout Order Creation
     # ------------------------------------------------------------------
     print("\n--- REGRESSION CHECK: Authorized Order Creation ---")
-    # Offer valid Round 1 price (Rs.2400 >= step price Rs.2400)
-    res_auth = client.post("/chat", json={"session_id": "sess_order_ok", "product_id": "prod_003", "message": "I offer 2400 rs"})
     # Offer valid Round 1 price (Rs.2425 >= step price Rs.2425)
     res_auth = client.post("/chat", json={"session_id": "sess_order_ok", "product_id": "prod_003", "message": "I offer 2425 rs"})
     assert res_auth.status_code == 200
@@ -169,8 +163,6 @@ def run_hardened_demonstration_suite():
             "session_id": "sess_order_ok",
             "product_id": "prod_003",
             "quantity": 1,
-            "requested_unit_price": "2400.00",
-            "total_payable_amount": "2400.00",
             "requested_unit_price": "2425.00",
             "total_payable_amount": "2425.00",
         },
@@ -178,7 +170,6 @@ def run_hardened_demonstration_suite():
     assert res_order.status_code == 200
     order_data = res_order.json()
     assert order_data["status"] == "created"
-    assert order_data["amount_in_paisa"] == 240000
     assert order_data["amount_in_paisa"] == 242500
     print(f"Result: Authorized Razorpay Order created successfully post-validation (Order ID: {order_data['order_id']}).")
 

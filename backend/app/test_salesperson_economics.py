@@ -18,13 +18,9 @@ def test_salesperson_economics():
     assert policy_003.reservation_price == Decimal("1550.00")
 
     # ----------------------------------------------------
-    # TEST 1: Direct PolicyEngine 5-Round Concession Curve
     # TEST 1: Direct PolicyEngine 7-Round Concession Curve
     # ----------------------------------------------------
     expected_curve = [
-        Decimal("2400.00"),
-        Decimal("2325.00"),
-        Decimal("2250.00"),
         Decimal("2425.00"),
         Decimal("2350.00"),
         Decimal("2275.00"),
@@ -34,7 +30,6 @@ def test_salesperson_economics():
         Decimal("2050.00"),
     ]
     prev_price = policy_003.listed_price
-    for r in range(1, 6):
     for r in range(1, 8):
         dec = PolicyEngine.evaluate_offer(policy_003, buyer_offer=Decimal("1500.00"), round_number=r, quantity=1)
         expected = expected_curve[r - 1]
@@ -44,13 +39,9 @@ def test_salesperson_economics():
         prev_price = dec.seller_authorized_price
 
     # Verify slow early concession, meaningful later concessions
-    r1_drop = policy_003.listed_price - expected_curve[0]  # 100
-    r4_drop = expected_curve[2] - expected_curve[3]        # 100
-    r5_drop = expected_curve[3] - expected_curve[4]        # 100
     r1_drop = policy_003.listed_price - expected_curve[0]  # 75
     assert r1_drop <= Decimal("100.00"), f"R1 concession too large: {r1_drop}"
     assert r1_drop < (policy_003.listed_price - policy_003.target_price) * Decimal("0.30"), "R1 consumed too much margin!"
-    print("[PASS] Concession pacing verified: R1 concession (Rs.100) protects 78% of negotiable margin.")
     print("[PASS] Concession pacing verified: R1 concession (Rs.75) protects 83% of negotiable margin.")
 
     # ----------------------------------------------------
@@ -60,14 +51,12 @@ def test_salesperson_economics():
     q2 = PolicyEngine.evaluate_offer(policy_003, buyer_offer=Decimal("1500.00"), round_number=1, quantity=2)
     q3 = PolicyEngine.evaluate_offer(policy_003, buyer_offer=Decimal("1500.00"), round_number=1, quantity=3)
 
-    assert q1.seller_authorized_price == Decimal("2400.00")
     assert q1.seller_authorized_price == Decimal("2425.00")
     assert q2.seller_authorized_price == Decimal("2125.00")
     assert q3.seller_authorized_price == Decimal("2050.00")
 
     # Monotonicity checks
     assert q1.seller_authorized_price >= q2.seller_authorized_price >= q3.seller_authorized_price >= policy_003.reservation_price
-    print("[PASS] Quantity incentives verified: 1 pc = Rs.2400, 2 pcs = Rs.2125/unit, 3 pcs = Rs.2050/unit.")
     print("[PASS] Quantity incentives verified: 1 pc = Rs.2425, 2 pcs = Rs.2125/unit, 3 pcs = Rs.2050/unit.")
 
     # ----------------------------------------------------
@@ -75,11 +64,6 @@ def test_salesperson_economics():
     # ----------------------------------------------------
     sid_lowball = "sess_salesperson_lowball"
     turns = [
-        ("Can I get it under 1900?", Decimal("2400.00"), 1),
-        ("Ok 1800", Decimal("2325.00"), 2),
-        ("How about 1700?", Decimal("2250.00"), 3),
-        ("1750 final", Decimal("2150.00"), 4),
-        ("1700 final", Decimal("2050.00"), 5),
         ("Can I get it under 1900?", Decimal("2425.00"), 1),
         ("Ok 1800", Decimal("2350.00"), 2),
         ("How about 1700?", Decimal("2275.00"), 3),
@@ -99,25 +83,19 @@ def test_salesperson_economics():
     # TEST 4: Premature Acceptance Guard (Gentle Offers)
     # ----------------------------------------------------
     sid_gentle = "sess_salesperson_gentle"
-    g1 = AgentOrchestrator.process_user_message(sid_gentle, "prod_003", "Can I get it for 2400?")
-    assert g1.deal_status == "agreed" and g1.validated_deal.effective_unit_price == Decimal("2400.00")
     g1 = AgentOrchestrator.process_user_message(sid_gentle, "prod_003", "Can I get it for 2425?")
     assert g1.deal_status == "agreed" and g1.validated_deal.effective_unit_price == Decimal("2425.00")
 
     g2 = AgentOrchestrator.process_user_message(sid_gentle, "prod_003", "2300?")
-    assert g2.deal_status == "negotiating" and g2.validated_deal.effective_unit_price == Decimal("2325.00")
     assert g2.deal_status == "negotiating" and g2.validated_deal.effective_unit_price == Decimal("2350.00")
 
     g3 = AgentOrchestrator.process_user_message(sid_gentle, "prod_003", "2200?")
-    assert g3.deal_status == "negotiating" and g3.validated_deal.effective_unit_price == Decimal("2250.00")
     assert g3.deal_status == "negotiating" and g3.validated_deal.effective_unit_price == Decimal("2275.00")
 
     g4 = AgentOrchestrator.process_user_message(sid_gentle, "prod_003", "2100?")
-    assert g4.deal_status == "negotiating" and g4.validated_deal.effective_unit_price == Decimal("2150.00")
     assert g4.deal_status == "negotiating" and g4.validated_deal.effective_unit_price == Decimal("2200.00")
 
     g5 = AgentOrchestrator.process_user_message(sid_gentle, "prod_003", "2050?")
-    assert g5.deal_status == "agreed" and g5.validated_deal.effective_unit_price == Decimal("2050.00")
     assert g5.deal_status == "negotiating" and g5.validated_deal.effective_unit_price == Decimal("2150.00")
     print("[PASS] Gentle offers verified: final authorized price was NOT given away prematurely.")
 
@@ -127,7 +105,6 @@ def test_salesperson_economics():
     sid_switch = "sess_quantity_switch"
     # Turn 1: 1 unit
     d1 = AgentOrchestrator.process_user_message(sid_switch, "prod_003", "Can I get 1 for 1900?")
-    assert d1.validated_deal.quantity == 1 and d1.validated_deal.effective_unit_price == Decimal("2400.00")
     assert d1.validated_deal.quantity == 1 and d1.validated_deal.effective_unit_price == Decimal("2425.00")
 
     # Turn 2: switch to 2 units
@@ -141,7 +118,6 @@ def test_salesperson_economics():
     # Turn 4: switch BACK to 1 unit (MUST NOT LEAK 2050)
     d4 = AgentOrchestrator.process_user_message(sid_switch, "prod_003", "1 piece")
     assert d4.validated_deal.quantity == 1
-    assert d4.validated_deal.effective_unit_price == Decimal("2150.00") or d4.validated_deal.effective_unit_price > Decimal("2050.00")
     assert d4.validated_deal.effective_unit_price == Decimal("2200.00") or d4.validated_deal.effective_unit_price > Decimal("2050.00")
     print("[PASS] Quantity switching verified: Zero leakage of 3-piece discount back to 1 piece.")
 
@@ -165,7 +141,6 @@ def test_salesperson_economics():
     # ----------------------------------------------------
     sid_iso = "sess_cross_product_iso"
     iso_p3 = AgentOrchestrator.process_user_message(sid_iso, "prod_003", "Can I get under 1900?")
-    assert iso_p3.validated_deal.product_id == "prod_003" and iso_p3.validated_deal.effective_unit_price == Decimal("2400.00")
     assert iso_p3.validated_deal.product_id == "prod_003" and iso_p3.validated_deal.effective_unit_price == Decimal("2425.00")
 
     iso_p1 = AgentOrchestrator.process_user_message(sid_iso, "prod_001", "Can I get it for 80?")
@@ -190,4 +165,3 @@ def test_salesperson_economics():
 
 if __name__ == "__main__":
     test_salesperson_economics()
-
