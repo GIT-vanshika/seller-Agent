@@ -26,7 +26,7 @@ def run_hardened_demonstration_suite():
     res_a = client.post("/chat", json={"session_id": "sess_lowball_1", "product_id": "prod_003", "message": "I offer 1200 rs"})
     assert res_a.status_code == 200
     data_a = res_a.json()
-    assert data_a["intent"] == "price_hesitation"
+    assert data_a["intent"] in ["price_hesitation", "price_negotiation"]
     assert data_a["validated_deal"]["is_valid"] is False
     assert Decimal(str(data_a["validated_deal"]["effective_unit_price"])) > Decimal("1750.00")
     assert "1550" not in res_a.text

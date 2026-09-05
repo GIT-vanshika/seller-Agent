@@ -11,6 +11,10 @@ class PolicyEngineDecision(BaseModel):
     max_rounds: int
     pricing_mode: PricingMode
     applied_tier_discount: Optional[Decimal] = None
+    nominal_tier_discount: Optional[Decimal] = None
+    is_floor_clamped: bool = False
+    unit_anchor: Optional[Decimal] = None
+    total_payable_amount: Optional[Decimal] = None
     buyer_safe_explanation: str
 
 
@@ -25,9 +29,10 @@ class PolicyEngine:
     def evaluate_offer(
         cls,
         policy: SellerPolicy,
-        buyer_offer: Decimal,
+        buyer_offer: Optional[Decimal],
         round_number: int = 1,
         quantity: int = 1,
+        negotiated_unit_price: Optional[Decimal] = None,
     ) -> PolicyEngineDecision:
         listed_price = policy.listed_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         aspiration_price = policy.aspiration_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -44,6 +49,8 @@ class PolicyEngine:
                 round_number=0,
                 max_rounds=0,
                 pricing_mode="fixed",
+                unit_anchor=listed_price,
+                total_payable_amount=(listed_price * Decimal(str(quantity))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
                 buyer_safe_explanation=f"Product is listed under a fixed price of ₹{listed_price:.2f}.",
             )
 
@@ -63,8 +70,32 @@ class PolicyEngine:
         #   volume_discount = seller_policy(quantity)
         #   final_total = base_total - volume_discount
         #   effective_unit_price = final_total / quantity
+        # Commercial Invariants:
+        # 1. negotiated_unit_price <= listed_price
+        # 2. No quantity transition may reset a valid negotiated anchor to listed_price.
+        #    - Fresh session (round_number <= 1, no prior negotiation): listed_price is anchor.
+        #    - Existing negotiated session: current_negotiated_unit_price is authoritative anchor.
+        #    - If existing negotiated session (round_number > 1) unexpectedly has no anchor:
+        #      fail safely rather than silently reverting to listed_price.
+        # 3. Base subtotal = unit_anchor * quantity.
+        # 4. If volume tier exists: final_total = base_subtotal * (1 - tier_discount) subject to seller floor.
+        # 5. Effective unit price = final_total / quantity >= reservation_price.
+        # 6. If floor clamped, do NOT claim nominal discount percentage and NEVER reveal seller floor.
         # -------------------------------------------------------------------------
         if quantity > 1:
+            if negotiated_unit_price is not None:
+                if negotiated_unit_price < reservation_price or negotiated_unit_price > listed_price:
+                    raise ValueError(
+                        f"CORRUPTED NEGOTIATION ANCHOR: Negotiated price ₹{negotiated_unit_price:.2f} "
+                        f"is outside valid policy bounds [₹{reservation_price:.2f}, ₹{listed_price:.2f}]."
+                    )
+                unit_anchor = negotiated_unit_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            elif round_number > 1:
+                # Existing negotiated session must not silently reset to listed_price
+                raise ValueError("CORRUPTED NEGOTIATION STATE: Missing negotiated unit price anchor in existing negotiated session.")
+            else:
+                unit_anchor = listed_price
+
             bulk_tier_discount = None
             if policy.bulk_rules and policy.bulk_rules.tiers:
                 sorted_tiers = sorted(policy.bulk_rules.tiers, key=lambda t: t.min_quantity, reverse=True)
@@ -74,15 +105,32 @@ class PolicyEngine:
                         break
 
             base_total = (listed_price * Decimal(str(quantity))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            base_total = (unit_anchor * Decimal(str(quantity))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             if bulk_tier_discount is not None:
                 discount_amt = (base_total * bulk_tier_discount / Decimal("100.0")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 final_total = base_total - discount_amt
                 effective_unit_price = (final_total / Decimal(str(quantity))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                raw_final_total = base_total - discount_amt
+                raw_effective_unit_price = (raw_final_total / Decimal(str(quantity))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             else:
                 effective_unit_price = listed_price
                 final_total = base_total
+                raw_final_total = base_total
+                raw_effective_unit_price = unit_anchor
 
             effective_unit_price = max(effective_unit_price, reservation_price)
+            # Floor protection check
+            is_floor_clamped = False
+            if raw_effective_unit_price < reservation_price:
+                effective_unit_price = reservation_price
+                final_total = (effective_unit_price * Decimal(str(quantity))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                is_floor_clamped = True
+                # Truthful commercial presentation: do not claim nominal discount if clamped by policy
+                applied_tier_discount = None
+            else:
+                effective_unit_price = raw_effective_unit_price
+                final_total = raw_final_total
+                applied_tier_discount = bulk_tier_discount
 
             if offer is not None and offer >= effective_unit_price:
                 return PolicyEngineDecision(
@@ -91,7 +139,11 @@ class PolicyEngine:
                     round_number=round_number,
                     max_rounds=max_rounds,
                     pricing_mode="negotiable",
-                    applied_tier_discount=bulk_tier_discount,
+                    applied_tier_discount=applied_tier_discount,
+                    nominal_tier_discount=bulk_tier_discount,
+                    is_floor_clamped=is_floor_clamped,
+                    unit_anchor=unit_anchor,
+                    total_payable_amount=final_total,
                     buyer_safe_explanation=f"Offer of ₹{offer:.2f} meets the volume pricing threshold for {quantity} units.",
                 )
             else:
@@ -101,8 +153,12 @@ class PolicyEngine:
                     round_number=round_number,
                     max_rounds=max_rounds,
                     pricing_mode="negotiable",
-                    applied_tier_discount=bulk_tier_discount,
-                    buyer_safe_explanation=f"Volume tier authorized price is ₹{effective_unit_price:.2f}/unit for {quantity} units.",
+                    applied_tier_discount=applied_tier_discount,
+                    nominal_tier_discount=bulk_tier_discount,
+                    is_floor_clamped=is_floor_clamped,
+                    unit_anchor=unit_anchor,
+                    total_payable_amount=final_total,
+                    buyer_safe_explanation=f"Volume authorized price is ₹{effective_unit_price:.2f}/unit for {quantity} units.",
                 )
 
         # -------------------------------------------------------------------------

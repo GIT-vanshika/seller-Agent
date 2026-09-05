@@ -57,6 +57,23 @@ interface RazorpayOrderResponse {
   quantity: number;
   effective_unit_price: number | string;
   total_payable_amount: number | string;
+  key_id?: string;
+  is_simulated?: boolean;
+  message: string;
+}
+
+interface RazorpayVerificationResponse {
+  success: boolean;
+  payment_status: string;
+  escrow_status: string;
+  order_id: string;
+  payment_id: string;
+  session_id: string;
+  amount_in_paisa: number;
+  currency: string;
+  effective_unit_price: number | string;
+  total_payable_amount: number | string;
+  quantity?: number;
   message: string;
 }
 
@@ -228,6 +245,7 @@ export default function AuraCommerceStorefront() {
   const [isPaymentProcessing, setIsPaymentProcessing] = useState<boolean>(false);
   const [paymentStep, setPaymentStep] = useState<number>(0);
   const [orderResult, setOrderResult] = useState<RazorpayOrderResponse | null>(null);
+  const [verifiedPayment, setVerifiedPayment] = useState<RazorpayVerificationResponse | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -267,7 +285,7 @@ export default function AuraCommerceStorefront() {
           {
             sender: "agent",
             time: timeStr,
-            text: `Welcome to AURA. I am your autonomous purchase intelligence and deal concierge for the **${data.product.name}**.\n\nListed MRP is ₹${formatCurrency(data.product.listed_price)}. Verified provenance records and real-world media are authenticated for this item. How can I help verify your confidence today?`,
+            text: `Welcome to AURA. I am your autonomous purchase intelligence and deal concierge for the **${data.product.name}**.\n\nListed MRP is ₹${formatCurrency(data.product.listed_price)}. I can help you assess this product using the available catalog information and real-world evidence before you decide. How can I help verify your confidence today?`,
           },
         ]);
 
@@ -277,6 +295,7 @@ export default function AuraCommerceStorefront() {
         setCitedEvidenceIds([]);
         setLastBuyerOfferText(null);
         setOrderResult(null);
+        setVerifiedPayment(null);
         setOrderError(null);
         setPaymentStep(0);
         setCanShowPayment(false);
@@ -378,6 +397,36 @@ export default function AuraCommerceStorefront() {
   };
 
   // Razorpay MVP checkout flow
+  // Helper: Submits authentic or simulated signature to authoritative backend verification
+  const submitPaymentVerification = async (
+    orderId: string,
+    paymentId: string,
+    signature: string
+  ) => {
+    setPaymentStep(3); // Verifying Payment Signature...
+    const verifyRes = await fetch(`${API_BASE}/verify-payment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: sessionId,
+        razorpay_order_id: orderId,
+        razorpay_payment_id: paymentId,
+        razorpay_signature: signature,
+      }),
+    });
+
+    const verifyData = await verifyRes.json();
+    if (!verifyRes.ok) {
+      throw new Error(verifyData.detail || "Payment signature verification failed.");
+    }
+
+    setPaymentStep(4);
+    setVerifiedPayment(verifyData);
+    setIsPaymentProcessing(false);
+  };
+
+  // Razorpay Authoritative Lifecycle Checkout Flow
+  // Sequence: VALIDATED_DEAL -> ORDER_CREATED -> RAZORPAY_CHECKOUT -> SERVER-SIDE HMAC VERIFICATION -> PAYMENT_CAPTURED -> ESCROW_RESERVED
   const handleProceedToPayment = async () => {
     if (!activeDeal || !activeDeal.is_valid) {
       setOrderError("A valid commercial deal must be agreed before proceeding to payment.");
@@ -385,13 +434,15 @@ export default function AuraCommerceStorefront() {
     }
 
     setIsPaymentProcessing(true);
-    setPaymentStep(1);
+    setPaymentStep(1); // Authenticating Deal Terms...
     setOrderError(null);
 
     setTimeout(() => setPaymentStep(2), 600);
 
     try {
-      const res = await fetch(`${API_BASE}/create-order`, {
+      // Step 1: ORDER_CREATED (Server executes PolicyEngine & DealConsistencyValidator)
+      setPaymentStep(2); // Securing Razorpay Order...
+      const orderRes = await fetch(`${API_BASE}/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -403,16 +454,88 @@ export default function AuraCommerceStorefront() {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || "Could not prepare checkout order.");
+      const orderData: RazorpayOrderResponse = await orderRes.json();
+      if (!orderRes.ok) {
+        throw new Error(orderData.message || "Could not prepare checkout order.");
       }
 
-      setTimeout(() => {
-        setPaymentStep(3);
-        setOrderResult(data);
-        setIsPaymentProcessing(false);
-      }, 1000);
+      setOrderResult(orderData);
+
+      // Step 2: DUAL-MODE CHECKOUT BRANCH (Official Razorpay Checkout Modal vs Simulation Fallback)
+      const isRealRazorpay = Boolean(
+        orderData.key_id && !orderData.is_simulated && typeof (window as any).Razorpay !== "undefined"
+      );
+
+      if (isRealRazorpay) {
+        // Real Razorpay Test Mode Flow
+        const options = {
+          key: orderData.key_id,
+          amount: orderData.amount_in_paisa,
+          currency: orderData.currency || "INR",
+          name: "AURA AI Deal Concierge",
+          description: `${selectedProduct?.name || "Product Suite"} (${activeDeal.quantity} units)`,
+          order_id: orderData.order_id,
+          handler: async function (response: {
+            razorpay_payment_id: string;
+            razorpay_order_id: string;
+            razorpay_signature: string;
+          }) {
+            try {
+              await submitPaymentVerification(
+                response.razorpay_order_id,
+                response.razorpay_payment_id,
+                response.razorpay_signature
+              );
+            } catch (verErr: any) {
+              setIsPaymentProcessing(false);
+              setPaymentStep(0);
+              setOrderError(verErr.message || "Payment signature verification failed.");
+            }
+          },
+          prefill: {
+            name: "AURA Valued Buyer",
+            email: "buyer@aura-agent.ai",
+            contact: "9820098200",
+          },
+          theme: {
+            color: "#10b981",
+          },
+          modal: {
+            ondismiss: function () {
+              setIsPaymentProcessing(false);
+              setPaymentStep(0);
+            },
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on("payment.failed", function (failRes: any) {
+          setIsPaymentProcessing(false);
+          setPaymentStep(0);
+          setOrderError(failRes.error?.description || "Payment failed on Razorpay Gateway.");
+        });
+        rzp.open();
+      } else {
+        // Safe Simulation Fallback Flow (used when Razorpay credentials are unset or during automated tests)
+        setPaymentStep(3); // Verifying Payment Signature...
+        const paymentId = `pay_rzp_${Math.random().toString(36).substring(2, 11)}`;
+
+        const sigRes = await fetch(`${API_BASE}/demo/sign-payment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            order_id: orderData.order_id,
+            payment_id: paymentId,
+          }),
+        });
+        const sigData = await sigRes.json();
+
+        await submitPaymentVerification(
+          orderData.order_id,
+          paymentId,
+          sigData.signature
+        );
+      }
     } catch (err: any) {
       setIsPaymentProcessing(false);
       setPaymentStep(0);
@@ -989,7 +1112,7 @@ export default function AuraCommerceStorefront() {
                                 </span>
                               </div>
                               <span className="font-data-mono-sm text-[10px] text-primary/80 uppercase">
-                                Authentication Node Verified
+                                Evidence Record Verified
                               </span>
                             </div>
                           </div>
@@ -1057,7 +1180,7 @@ export default function AuraCommerceStorefront() {
                           <div className="flex items-center justify-between py-1.5 text-on-surface-variant">
                             <div className="flex items-center gap-1.5">
                               <span className="material-symbols-outlined text-[14px] text-secondary">gavel</span>
-                              <span>Authenticity Escrow Hold &amp; Packaging</span>
+                              <span>Deal Terms Protection &amp; Packaging</span>
                             </div>
                             <span className="font-data-mono-sm text-[11px] text-secondary font-bold uppercase">Included</span>
                           </div>
@@ -1124,16 +1247,18 @@ export default function AuraCommerceStorefront() {
                         </span>
                         <span className="font-label-md text-xs md:text-sm uppercase tracking-wider">
                           {paymentStep === 1
-                            ? "Authenticating Escrow Node..."
+                            ? "Preparing Escrow Protection..."
                             : paymentStep === 2
                             ? "Securing Razorpay Order..."
+                            : paymentStep === 3
+                            ? "Verifying Payment Signature..."
                             : `Pay ₹${formatCurrency(activeDeal.total_payable_amount)} with Razorpay`}
                         </span>
                       </button>
 
                       <div className="flex items-center justify-center gap-1.5 text-[11px] text-on-surface-variant">
                         <span className="material-symbols-outlined text-[14px] text-secondary">shield</span>
-                        <span>Official Razorpay Gateway · 256-bit encrypted escrow protection</span>
+                        <span>Official Razorpay Gateway · Deal terms escrow protection</span>
                       </div>
 
                       {orderError && (
@@ -1142,12 +1267,49 @@ export default function AuraCommerceStorefront() {
                         </p>
                       )}
                     </div>
-                  ) : (
-                    /* Confirmed Order State */
-                    <div className="flex flex-col gap-2">
+                  ) : verifiedPayment ? (
+                    /* Verified Payment & Escrow Reserved State */
+                    <div className="flex flex-col gap-2.5 animate-fadeIn">
                       <div className="w-full bg-secondary text-[#022c22] py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 shadow-sm font-bold text-xs">
-                        <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                        <span>Order Created · Razorpay Order #{orderResult.order_id} (₹{formatCurrency(orderResult.total_payable_amount)})</span>
+                        <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                        <span>Payment Captured &amp; Escrow Reserved · ₹{formatCurrency(verifiedPayment.total_payable_amount ?? activeDeal?.total_payable_amount ?? 0)}</span>
+                      </div>
+
+                      <div className="bg-surface-container-low p-3 rounded-lg border border-secondary/40 text-[11px] flex flex-col gap-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-on-surface-variant">Payment Status: </span>
+                          <span className="font-data-mono font-bold text-secondary uppercase tracking-wider">
+                            {verifiedPayment.payment_status}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-on-surface-variant">Payment ID: </span>
+                          <span className="font-data-mono font-semibold text-secondary">{verifiedPayment.payment_id}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-on-surface-variant">Razorpay Order ID: </span>
+                          <span className="font-data-mono font-semibold text-on-surface">{verifiedPayment.order_id}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-on-surface-variant">Escrow Status: </span>
+                          <span className="font-data-mono font-bold text-secondary uppercase tracking-wider">
+                            {verifiedPayment.escrow_status} (Deal Terms Escrow Hold)
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-on-surface-variant">Effective Rate: </span>
+                          <span className="font-data-mono text-on-surface">
+                            ₹{formatCurrency(verifiedPayment.effective_unit_price ?? activeDeal?.effective_unit_price ?? 0)} / unit ({verifiedPayment.quantity ?? activeDeal?.quantity ?? 1} {(verifiedPayment.quantity ?? activeDeal?.quantity ?? 1) === 1 ? "unit" : "units"})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Order Created State */
+                    <div className="flex flex-col gap-2 animate-fadeIn">
+                      <div className="w-full bg-surface-container-high text-on-surface py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 border border-outline-variant/60 shadow-sm font-bold text-xs">
+                        <span className="material-symbols-outlined text-[18px] text-primary animate-spin">progress_activity</span>
+                        <span>Order Created · Awaiting Payment Verification #{orderResult.order_id}</span>
                       </div>
 
                       <div className="bg-surface-container-low p-2.5 rounded border border-outline-variant/40 text-[11px] flex justify-between">

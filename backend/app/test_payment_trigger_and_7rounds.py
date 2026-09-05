@@ -1,3 +1,4 @@
+import os
 from decimal import Decimal
 from app.orchestrator import AgentOrchestrator
 from app.session_manager import session_db
@@ -6,6 +7,7 @@ from app.data_loader import db
 
 
 def test_payment_triggers_and_7rounds():
+    os.environ["GEMINI_API_KEY"] = ""
     print("================================================================")
     print("   TESTING MULTI-STAGE PAYMENT CONTRACT & 7-ROUND POLICY        ")
     print("================================================================")
@@ -117,9 +119,9 @@ def test_payment_triggers_and_7rounds():
     s_r7 = session_db.get_session(sid_7r)
     assert s_r7.current_negotiated_unit_price == Decimal("2050.00")
 
-    # 2. Tell the buyer: "We cannot get below ₹X. It is against seller policy."
-    assert "cannot get below" in res_r7.message.lower()
-    assert "against seller policy" in res_r7.message.lower()
+    # 2. Tell the buyer: Firm boundary phrased naturally without system policy jargon
+    msg_lower = res_r7.message.lower()
+    assert ("can't go lower" in msg_lower or "cannot get below" in msg_lower or "best i can do" in msg_lower)
     assert "2050" in res_r7.message
 
     # 3. NO "limit" or "maximum negotiation rounds" language
@@ -135,14 +137,59 @@ def test_payment_triggers_and_7rounds():
     assert res_r7.can_show_payment is False, "Payment should NOT appear before buyer acceptance!"
     print("[PASS] Round 7: Final firm price Rs.2050.00 established. Zero limit language. deal_status=negotiating, can_show_payment=False.")
 
-    # 5. BUYER ACCEPTS: Now buyer sends "Ok done"
-    print("\n  Buyer sends 'Ok done' to accept established final firm price...")
-    res_agree = AgentOrchestrator.process_user_message(sid_7r, pid, "Ok done")
+    # ------------------------------------------------------------------
+    # TEST 3B: Buyer says "Okay, I'll think about it." -> NO Razorpay
+    # ------------------------------------------------------------------
+    print("\n  Buyer says 'Okay, I'll think about it.'...")
+    res_think = AgentOrchestrator.process_user_message(sid_7r, pid, "Okay, I'll think about it.")
+    assert res_think.can_show_payment is False, "Payment MUST NOT appear when buyer is thinking about it!"
+    assert res_think.deal_status == "negotiating"
+    assert "razorpay" not in res_think.message.lower()
+    print("[PASS] 'Okay, I'll think about it.' -> can_show_payment=False, deal_status=negotiating, zero Razorpay")
+
+    # ------------------------------------------------------------------
+    # TEST 3C: BUYER ACCEPTS: Buyer says "I'll take it."
+    # ------------------------------------------------------------------
+    print("\n  Buyer sends 'I'll take it.' to accept established final firm price...")
+    res_agree = AgentOrchestrator.process_user_message(sid_7r, pid, "I'll take it.")
     assert res_agree.deal_status == "agreed"
     assert res_agree.can_show_payment is True
     assert res_agree.validated_deal.is_valid is True
     assert res_agree.validated_deal.effective_unit_price == Decimal("2050.00")
-    print("[PASS] BUYER_ACCEPTS -> DEAL_AGREED -> can_show_payment=True, price=Rs.2050.00")
+    print("[PASS] BUYER_ACCEPTS ('I'll take it.') -> DEAL_AGREED -> can_show_payment=True, price=Rs.2050.00")
+
+    # ------------------------------------------------------------------
+    # TEST 3D: Payment Inquiry after Round 7: "How do I pay?"
+    # ------------------------------------------------------------------
+    print("\n  Testing Payment Inquiry after Round 7: 'How do I pay?'...")
+    sid_how = "sess_test_how_do_i_pay_after_r7"
+    for r_num, text, exp_counter in concession_steps:
+        AgentOrchestrator.process_user_message(sid_how, pid, text)
+    res_how_r7 = AgentOrchestrator.process_user_message(sid_how, pid, "Can you do 1900 final?")
+    assert res_how_r7.negotiation_round == 7
+    assert res_how_r7.can_show_payment is False
+    res_how = AgentOrchestrator.process_user_message(sid_how, pid, "How do I pay?")
+    assert res_how.can_show_payment is True
+    assert res_how.deal_status == "agreed"
+    assert res_how.validated_deal.is_valid is True
+    assert res_how.validated_deal.effective_unit_price == Decimal("2050.00")
+    print("[PASS] 'How do I pay?' after Round 7 -> can_show_payment=True, deal_status=agreed")
+
+    # ------------------------------------------------------------------
+    # TEST 3E: Inquire about 5 units after Round 7: "For 5 units, what price can you give?"
+    # ------------------------------------------------------------------
+    print("\n  Testing 5-unit query after Round 7...")
+    sid_qty = "sess_test_qty_after_r7"
+    for r_num, text, exp_counter in concession_steps:
+        AgentOrchestrator.process_user_message(sid_qty, pid, text)
+    res_qty_r7 = AgentOrchestrator.process_user_message(sid_qty, pid, "Can you do 1900 final?")
+    assert res_qty_r7.negotiation_round == 7
+    assert res_qty_r7.can_show_payment is False
+    res_5u = AgentOrchestrator.process_user_message(sid_qty, pid, "For 5 units, what price can you give?")
+    assert res_5u.can_show_payment is False, "Payment should NOT appear upon bulk query alone!"
+    assert res_5u.quantity == 5
+    assert res_5u.validated_deal.effective_unit_price < Decimal("2050.00")
+    print(f"[PASS] 'For 5 units, what price can you give?' -> quantity=5, unit_rate=Rs.{res_5u.validated_deal.effective_unit_price}, can_show_payment=False")
 
     # 6. RAZORPAY ORDER: Create order at validated Rs.2050.00
     rzp_req = RazorpayOrderRequest(

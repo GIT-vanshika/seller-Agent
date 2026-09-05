@@ -31,6 +31,7 @@ class SessionState(BaseModel):
     quantity: int = 1
     negotiation_round: int = 0
     current_negotiated_unit_price: Optional[Decimal] = None
+    single_unit_negotiated_price: Optional[Decimal] = None
     deal_status: str = "exploring"  # "exploring", "negotiating", "agreed", "checked_out"
     messages: List[ChatMessage] = Field(default_factory=list)
     last_validated_deal: Optional[ValidatedDeal] = None
@@ -120,6 +121,8 @@ class SessionManager:
 
         if agreed_price is not None:
             session.current_negotiated_unit_price = agreed_price
+            if session.quantity == 1:
+                session.single_unit_negotiated_price = agreed_price
             session.deal_status = "agreed"
         elif session.negotiation_round > 0:
             session.deal_status = "negotiating"
@@ -135,6 +138,8 @@ class SessionManager:
         session.last_validated_deal = deal
         session.quantity = deal.quantity
         session.current_negotiated_unit_price = deal.effective_unit_price
+        if deal.quantity == 1 and deal.is_valid:
+            session.single_unit_negotiated_price = deal.effective_unit_price
         if deal.is_valid and is_agreed:
             session.deal_status = "agreed"
         elif session.negotiation_round > 0:

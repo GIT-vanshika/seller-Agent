@@ -43,7 +43,7 @@ class EvidenceRetriever:
             return "durability"
         if any(w in q_lower for w in ["authentic", "genuine", "original", "fake", "scam"]):
             return "authenticity"
-        if any(w in q_lower for w in ["look like", "photo", "picture", "video", "real life", "appearance", "unboxing", "color", "texture"]):
+        if any(w in q_lower for w in ["look", "photo", "picture", "video", "real life", "appearance", "unboxing", "color", "texture", "offline", "identical"]):
             return "appearance"
         if any(w in q_lower for w in ["size", "sizing", "fit", "dimension", "measurement"]):
             return "sizing"
@@ -78,9 +78,21 @@ class EvidenceRetriever:
 
         # 2. Question-Specific Relevance & Selection Logic
         if category == "appearance":
-            selected_evidence = [e for e in isolated_evidence if e.source in ["seller_reality", "customer_experience"]]
-            if not selected_evidence:
-                selected_evidence = [e for e in isolated_evidence if e.source == "seller_marketing"]
+            q_lower = (question or "").lower()
+            is_look_like = bool(re.search(r"\b(?:look\s+like|looks\s+like|look\s+in\s+real)\b", q_lower))
+            has_photo_req = not is_look_like and bool(re.search(r"\b(?:photo|photos|picture|pictures|pic|pics|image|images)\b", q_lower))
+            has_video_req = not is_look_like and bool(re.search(r"\b(?:video|videos|clip|clips|footage)\b", q_lower))
+
+            if has_photo_req and not has_video_req:
+                selected_evidence = [e for e in isolated_evidence if e.type == "image"]
+            elif has_video_req and not has_photo_req:
+                selected_evidence = [e for e in isolated_evidence if e.type == "video"]
+            elif has_photo_req and has_video_req:
+                selected_evidence = [e for e in isolated_evidence if e.type in ["image", "video"]]
+            else:
+                selected_evidence = [e for e in isolated_evidence if e.source in ["seller_reality", "customer_experience"]]
+                if not selected_evidence:
+                    selected_evidence = [e for e in isolated_evidence if e.source == "seller_marketing"]
 
         elif category in ["material", "authenticity"]:
             specs = [e for e in isolated_evidence if any(w in e.content.lower() or w in e.label.lower() for w in ["spec", "material", "fabric", "silk", "cotton", "linen"])]
@@ -99,6 +111,9 @@ class EvidenceRetriever:
             selected_evidence = [e for e in isolated_evidence if any(w in e.content.lower() or w in e.label.lower() for w in ["size", "sizing", "fit", "dimension"])]
             if not selected_evidence:
                 selected_evidence = [e for e in isolated_evidence if e.type == "text"]
+
+        elif category == "quality":
+            selected_evidence = [e for e in isolated_evidence if any(w in e.content.lower() or w in e.label.lower() for w in ["stitch", "stitching", "craftsmanship", "finish", "quality"])]
 
         else:
             selected_evidence = isolated_evidence[:4]
@@ -140,6 +155,15 @@ class EvidenceRetriever:
             else:
                 status = "insufficient_evidence"
                 reason = "No long-term durability or warranty evidence found."
+
+        elif category == "quality":
+            has_quality = any(any(w in e.content.lower() or w in e.label.lower() for w in ["stitch", "stitching", "craftsmanship", "finish", "quality"]) for e in selected_evidence)
+            if has_quality:
+                status = "partially_resolved"
+                reason = "Grounded product evidence contains craftsmanship and finish details."
+            else:
+                status = "insufficient_evidence"
+                reason = "Seller has not provided specific stitching-quality or overall-quality information in the catalog."
 
         else:
             if "seller_reality" in sources_used or "customer_experience" in sources_used:

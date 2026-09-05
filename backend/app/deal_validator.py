@@ -40,7 +40,11 @@ class DealConsistencyValidator:
     """
 
     @staticmethod
-    def _calculate_bulk_unit_price(policy: SellerPolicy, quantity: int) -> Optional[Decimal]:
+    def _calculate_bulk_unit_price(
+        policy: SellerPolicy,
+        quantity: int,
+        base_unit_price: Optional[Decimal] = None,
+    ) -> Optional[Decimal]:
         if not policy.bulk_rules or not policy.bulk_rules.tiers:
             return None
 
@@ -52,8 +56,10 @@ class DealConsistencyValidator:
                 break
 
         if applicable_tier:
+            anchor = (base_unit_price or policy.listed_price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             multiplier = Decimal("1.0") - (applicable_tier.discount_percentage / Decimal("100.0"))
             bulk_unit_price = (policy.listed_price * multiplier).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            bulk_unit_price = (anchor * multiplier).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             return bulk_unit_price
 
         return None
@@ -153,8 +159,49 @@ class DealConsistencyValidator:
             # Multi-unit volume deal: governed by authoritative volume tiers, not single-unit curve
             if bulk_unit_price is not None and bulk_unit_price >= reservation_price:
                 authorized_paths.append((bulk_unit_price, f"Bulk Tier Pricing (Qty >= {quantity})"))
+            # Multi-unit volume deal: anchored on negotiated unit price or listed price
+            if request.current_negotiated_unit_price is not None:
+                if request.current_negotiated_unit_price < reservation_price or request.current_negotiated_unit_price > listed_price:
+                    return ValidatedDeal(
+                        deal_id=deal_id,
+                        product_id=policy.product_id,
+                        quantity=quantity,
+                        listed_price=listed_price,
+                        proposed_unit_price=proposed_price,
+                        effective_unit_price=listed_price,
+                        total_payable_amount=Decimal("0.00"),
+                        pricing_mode=policy.pricing_mode,
+                        is_valid=False,
+                        validation_code="CORRUPTED_ANCHOR",
+                        validation_message="Negotiated anchor is outside valid policy boundaries.",
+                        applied_rule_description="Negotiated anchor integrity rule.",
+                    )
+                unit_anchor = request.current_negotiated_unit_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            elif request.negotiation_round > 1:
+                return ValidatedDeal(
+                    deal_id=deal_id,
+                    product_id=policy.product_id,
+                    quantity=quantity,
+                    listed_price=listed_price,
+                    proposed_unit_price=proposed_price,
+                    effective_unit_price=listed_price,
+                    total_payable_amount=Decimal("0.00"),
+                    pricing_mode=policy.pricing_mode,
+                    is_valid=False,
+                    validation_code="MISSING_NEGOTIATED_ANCHOR",
+                    validation_message="Missing negotiated unit price anchor in existing negotiated session.",
+                    applied_rule_description="Negotiated anchor integrity rule.",
+                )
             else:
                 authorized_paths.append((listed_price, "Standard Catalog Listed Price"))
+                unit_anchor = listed_price
+
+            bulk_unit_price = cls._calculate_bulk_unit_price(policy, quantity, base_unit_price=unit_anchor)
+            if bulk_unit_price is not None:
+                clamped_bulk = max(bulk_unit_price, reservation_price)
+                authorized_paths.append((clamped_bulk, f"Bulk Tier Pricing (Qty >= {quantity})"))
+            else:
+                authorized_paths.append((unit_anchor, f"Volume Base Anchor (Qty {quantity})"))
 
         # Select the lowest unit price strictly authorized by backend pricing paths
         best_authorized_price, applied_path_desc = min(authorized_paths, key=lambda p: p[0])

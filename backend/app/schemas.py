@@ -51,3 +51,26 @@ class CreateOrderApiRequest(BaseModel):
     quantity: int = Field(..., gt=0)
     requested_unit_price: Decimal = Field(..., ge=Decimal("0"))
     total_payable_amount: Decimal = Field(..., ge=Decimal("0"))
+
+
+class VerifyPaymentApiRequest(BaseModel):
+    session_id: str
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+
+
+class VerifyPaymentApiResponse(BaseModel):
+    success: bool
+    payment_status: str
+    escrow_status: str
+    order_id: str
+    payment_id: str
+    session_id: str
+    amount_in_paisa: int
+    currency: str
+    effective_unit_price: Decimal
+    total_payable_amount: Decimal
+    quantity: Optional[int] = 1
+    message: str
+

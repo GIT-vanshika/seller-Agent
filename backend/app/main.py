@@ -1,5 +1,22 @@
+import os
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+# Auto-load backend/.env if present
+_env_path = Path(__file__).resolve().parent.parent / ".env"
+if _env_path.exists():
+    try:
+        with open(_env_path, "r", encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _v = _line.split("=", 1)
+                    _k, _v = _k.strip(), _v.strip().strip('"').strip("'")
+                    if _k and _v:
+                        os.environ[_k] = _v
+    except Exception:
+        pass
 from app.data_loader import db
 from app.schemas import (
     ProductResponse,
@@ -9,11 +26,16 @@ from app.schemas import (
     ChatApiRequest,
     ValidateDealApiRequest,
     CreateOrderApiRequest,
+    VerifyPaymentApiRequest,
+    VerifyPaymentApiResponse,
 )
 from app.orchestrator import AgentOrchestrator, AgentChatResponse
 from app.deal_validator import DealConsistencyValidator, DealValidationRequest, ValidatedDeal
 from app.razorpay_service import RazorpayService, RazorpayOrderRequest, RazorpayOrderResponse
+from app.razorpay_service import RazorpayService, RazorpayOrderRequest, RazorpayOrderResponse, RazorpayVerificationResponse
 from app.session_manager import session_db
+from app.models import NegotiationExperience
+from app.experience_store import experience_store
 
 app = FastAPI(title="AI Purchase Confidence & Deal Agent Public API")
 
@@ -106,6 +128,7 @@ def validate_deal_endpoint(req: ValidateDealApiRequest):
 
     session = session_db.get_session(req.session_id)
     curr_neg_price = session.current_negotiated_unit_price if session else None
+    curr_neg_price = (session.single_unit_negotiated_price or session.current_negotiated_unit_price) if session else None
     curr_round = session.negotiation_round if session else 1
 
     val_req = DealValidationRequest(
@@ -128,6 +151,7 @@ def create_order_endpoint(req: CreateOrderApiRequest):
 
     session = session_db.get_session(req.session_id)
     curr_neg_price = session.current_negotiated_unit_price if session else None
+    curr_neg_price = (session.single_unit_negotiated_price or session.current_negotiated_unit_price) if session else None
     curr_round = session.negotiation_round if session else 1
 
     try:
@@ -147,6 +171,86 @@ def create_order_endpoint(req: CreateOrderApiRequest):
         return order_res
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/verify-payment", response_model=VerifyPaymentApiResponse)
+def verify_payment_endpoint(req: VerifyPaymentApiRequest):
+    session = session_db.get_session(req.session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    try:
+        verification_res = RazorpayService.verify_payment_safe(
+            session_id=req.session_id,
+            order_id=req.razorpay_order_id,
+            payment_id=req.razorpay_payment_id,
+            signature=req.razorpay_signature,
+            session=session,
+        )
+
+        # Transition authoritative session state
+        session.deal_status = "checked_out"
+
+        # Phase 3 Experience Store: Save negotiation trajectory upon verified deal closure
+        product = db.get_product(session.product_id)
+        starting_price = product.listed_price if product else (
+            session.last_validated_deal.listed_price if session.last_validated_deal else Decimal("0.00")
+        )
+
+        buyer_offers = [
+            m.suggested_price for m in session.messages if m.sender == "buyer" and m.suggested_price is not None
+        ]
+        seller_counter_offers = [
+            m.suggested_price for m in session.messages if m.sender == "agent" and m.suggested_price is not None
+        ]
+
+        exp = NegotiationExperience(
+            session_id=session.session_id,
+            product_id=session.product_id,
+            starting_price=starting_price,
+            buyer_offers=buyer_offers,
+            seller_counter_offers=seller_counter_offers,
+            rounds=session.negotiation_round,
+            final_agreed_price=verification_res.effective_unit_price,
+            converted=True,
+            quantity=session.quantity,
+            seller_feedback="Deal converted and cryptographically verified via HMAC SHA-256 signature.",
+            successful_in_seller_view=True,
+        )
+        experience_store.save_experience(exp)
+
+        return VerifyPaymentApiResponse(
+            success=verification_res.success,
+            payment_status=verification_res.payment_status,
+            escrow_status=verification_res.escrow_status,
+            order_id=verification_res.order_id,
+            payment_id=verification_res.payment_id,
+            session_id=verification_res.session_id,
+            amount_in_paisa=verification_res.amount_in_paisa,
+            currency=verification_res.currency,
+            effective_unit_price=verification_res.effective_unit_price,
+            total_payable_amount=verification_res.total_payable_amount,
+            quantity=verification_res.quantity or session.quantity or 1,
+            message=verification_res.message,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/demo/sign-payment")
+def demo_sign_payment_endpoint(req: dict):
+    order_id = req.get("order_id", "")
+    payment_id = req.get("payment_id", "")
+    sig = RazorpayService.generate_test_signature(order_id, payment_id)
+    return {"signature": sig}
+
+
+@app.get("/experience/{session_id}")
+def get_experience_endpoint(session_id: str):
+    exp = experience_store.get_experience(session_id)
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experience not found for session")
+    return exp
 
 
 @app.get("/session/{session_id}")

@@ -101,12 +101,13 @@ def run_economic_boundary_tests():
     # ------------------------------------------------------------------
     # Case 6: Negotiated price below bulk baseline but above reservation
     # ------------------------------------------------------------------
-    # Suppose PolicyEngine authorized Rs.850 (target is 900, reservation 800)
+    # Suppose PolicyEngine authorized Rs.850 from anchor Rs.944.44 (10% bulk tier: 944.44 * 0.90 = 850)
     req_6 = DealValidationRequest(
         product_id="prod_004",
         quantity=5,
         proposed_unit_price=Decimal("850.00"),
         seller_authorized_price=Decimal("850.00"),
+        current_negotiated_unit_price=Decimal("944.44"),
         negotiation_round=4,
     )
     val_6 = DealConsistencyValidator.validate_deal(policy_004, req_6)
@@ -152,13 +153,13 @@ def run_economic_boundary_tests():
     # ------------------------------------------------------------------
     # Negotiating single unit at target, then requesting 100 units
     target_p3 = policy_003.target_price
-    dec_9 = PolicyEngine.evaluate_offer(policy_003, buyer_offer=target_p3, round_number=5, quantity=100)
+    dec_9 = PolicyEngine.evaluate_offer(policy_003, buyer_offer=target_p3, round_number=1, quantity=100)
     req_9 = DealValidationRequest(
         product_id="prod_003",
         quantity=100,
         proposed_unit_price=target_p3,
         seller_authorized_price=dec_9.seller_authorized_price,
-        negotiation_round=5,
+        negotiation_round=1,
     )
     val_9 = DealConsistencyValidator.validate_deal(policy_003, req_9)
     assert val_9.is_valid

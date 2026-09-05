@@ -30,6 +30,8 @@ PrimaryIntent = Literal[
     "product_question",
     "trust_concern",
     "price_negotiation",
+    "quantity_pricing_query",
+    "seller_policy_probing",
     "purchase_intent",
     "clarification",
     "general_conversation",
@@ -52,6 +54,42 @@ class BuyerIntentDecision(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score bounded between 0.0 and 1.0")
     reason: str = Field(..., min_length=1, max_length=500, description="Short classification reasoning")
     product_question: Optional[ProductQuestion] = Field(default=None, description="Optional structured product question")
+    requested_quantity: Optional[int] = Field(default=None, ge=1, le=1000, description="Optional buyer requested quantity extracted from context")
+    offered_price: Optional[Decimal] = Field(default=None, ge=Decimal("0.00"), description="Optional buyer proposed unit price offer")
+
+
+class UpsellOpportunity(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    min_quantity: int = Field(..., ge=2, description="Minimum quantity to unlock this volume tier")
+    unit_rate: Decimal = Field(..., ge=Decimal("0.00"), description="Effective unit price for this volume tier")
+    total_payable: Decimal = Field(..., ge=Decimal("0.00"), description="Total payable amount for this volume tier")
+    discount_pct: Optional[Decimal] = Field(default=None, description="Nominal discount percentage if not suppressed by floor clamping")
+
+
+class BuyerSafeCommercialContext(BaseModel):
+    """
+    Least-privilege buyer-safe commercial context for Gemini Salesperson generation.
+    STRICT SECURITY BOUNDARY:
+    MUST NEVER CONTAIN SellerPolicy, reservation_price, target_price, aspiration_price, BATNA, or secrets.
+    """
+    model_config = ConfigDict(extra="forbid")
+
+    product_name: str = Field(..., description="Name of the product")
+    catalog_listed_price: Decimal = Field(..., description="Public catalog listed price")
+    single_unit_negotiated_anchor: Optional[Decimal] = Field(default=None, description="Authoritative single-unit rate established in negotiation")
+    requested_quantity: int = Field(..., ge=1, description="Quantity for the current turn")
+    effective_unit_price: Decimal = Field(..., description="Authoritative effective unit price from commercial engine")
+    total_payable_amount: Decimal = Field(..., description="Authoritative total payable amount from commercial engine")
+    applied_discount_percentage: Optional[Decimal] = Field(default=None, description="Authorized volume tier discount percentage, None if not qualified or floor-clamped")
+    is_floor_clamped: bool = Field(default=False, description="True if floor protection clamped nominal discount")
+    negotiation_round: int = Field(..., ge=0, description="Current negotiation round")
+    max_rounds: int = Field(..., ge=0, description="Maximum negotiation rounds allowed by seller policy")
+    is_final_round: bool = Field(default=False, description="True if negotiation reached the final policy boundary")
+    deal_status: Literal["negotiating", "agreed", "firm_policy_boundary", "checked_out"] = Field(..., description="High-level commercial deal status")
+    buyer_accepted: bool = Field(default=False, description="True only if buyer has explicitly accepted terms")
+    can_show_payment: bool = Field(default=False, description="True only if payment checkout is authorized")
+    upsell_opportunity: Optional[UpsellOpportunity] = Field(default=None, description="Optional legitimate upsell opportunity computed by PolicyEngine")
 
 
 # Legacy alias for backward compatibility during contract transition

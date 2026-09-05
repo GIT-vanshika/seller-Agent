@@ -8,8 +8,8 @@ from pydantic import BaseModel
 from app.data_loader import db
 from app.models import Product, SellerPolicy, Evidence
 from app.intent_classifier import IntentClassifier, IntentResult
-from app.gemini_intent_service import GeminiIntentService, PublicProductContext
-from app.contracts import BuyerIntentDecision, TrustState
+from app.gemini_intent_service import GeminiIntentService, PublicProductContext, GeminiSalespersonService
+from app.contracts import BuyerIntentDecision, TrustState, BuyerSafeCommercialContext, UpsellOpportunity
 from app.policy_engine import PolicyEngine, PolicyEngineDecision
 from app.deal_validator import DealConsistencyValidator, ValidatedDeal, DealValidationRequest
 from app.session_manager import session_db, SessionState, ChatMessage
@@ -46,6 +46,7 @@ class AgentOrchestrator:
         product_id: str,
         user_text: str,
         client_override_intent: Optional[Any] = None,
+        client_override_salesperson: Optional[Any] = None,
     ) -> AgentChatResponse:
         # 1. Fetch catalog product data and private seller policy
         product: Optional[Product] = db.get_product(product_id)
@@ -74,17 +75,22 @@ class AgentOrchestrator:
             for m in session.messages[-4:-1]
         ]
 
-        # 4. Invoke Gemini Intent Understanding Intelligence Layer
-        intent_decision: BuyerIntentDecision = GeminiIntentService.understand_buyer_intent(
-            message=user_text,
-            conversation_context=history_snippet,
-            product_context=public_context,
-            client_override=client_override_intent,
-        )
-        session.latest_intent_decision = intent_decision
-
         # Session Context Awareness
         in_negotiation = session.negotiation_round > 0 or session.deal_status in ["negotiating", "agreed"]
+
+        # 4. Intent Understanding: Deterministic-first pre-check to conserve Gemini quota and avoid 429 errors
+        is_unambiguous, fast_decision = IntentClassifier.is_unambiguous_intent(user_text, in_negotiation=in_negotiation)
+        if client_override_intent is not None or not is_unambiguous or fast_decision is None:
+            intent_decision: BuyerIntentDecision = GeminiIntentService.understand_buyer_intent(
+                message=user_text,
+                conversation_context=history_snippet,
+                product_context=public_context,
+                client_override=client_override_intent,
+            )
+        else:
+            intent_decision = fast_decision
+
+        session.latest_intent_decision = intent_decision
 
         # Extract numeric offers or quantity from IntentClassifier fallback regex helper with context
         intent_res: IntentResult = IntentClassifier.classify(
@@ -97,15 +103,34 @@ class AgentOrchestrator:
         is_acceptance_phrase = IntentClassifier.is_acceptance(user_text)
         is_payment_inquiry = IntentClassifier.is_payment_inquiry(user_text)
         is_explicit_buy = IntentClassifier.is_explicit_buy(user_text)
+        is_deliberation = IntentClassifier.is_deliberation(user_text)
+        is_savings = IntentClassifier.is_savings_query(user_text)
+        is_product_q = IntentClassifier.is_product_question(user_text)
+
+        # Resolve entities: Gemini Stage 1 or deterministic regex fallback
+        extracted_qty = intent_decision.requested_quantity if intent_decision.requested_quantity is not None else intent_res.requested_quantity
+        requested_qty = extracted_qty if extracted_qty is not None else session.quantity
+        offered_price = intent_decision.offered_price if intent_decision.offered_price is not None else intent_res.offered_price
 
         # DETERMINISTIC INTENT RESOLUTION:
         primary = intent_decision.primary_intent
         hesitation = intent_decision.hesitation
 
+        if is_deliberation:
+            primary = "deliberation"
+            hesitation = "none"
+        elif is_savings:
+            primary = "savings_inquiry"
+            hesitation = "none"
         # Natural acceptance phrases or payment inquiries map directly to purchase_intent
-        if is_acceptance_phrase or is_payment_inquiry or intent_res.intent == "checkout_intent":
+        elif is_acceptance_phrase or is_payment_inquiry or intent_res.intent == "checkout_intent":
             primary = "purchase_intent"
             hesitation = "none"
+        elif is_product_q and offered_price is None:
+            primary = "product_question"
+            hesitation = "trust"
+        elif primary in ["quantity_pricing_query", "seller_policy_probing"]:
+            hesitation = "price"
         elif intent_decision.confidence == 0.0 and intent_res.intent != "general_inquiry":
             # Deterministic fallback when Gemini is unavailable
             primary = intent_res.intent
@@ -113,13 +138,10 @@ class AgentOrchestrator:
                 hesitation = "price"
             elif primary in ["trust_hesitation", "trust_concern"]:
                 hesitation = "trust"
-        elif in_negotiation and (intent_res.offered_price is not None or intent_res.requested_quantity is not None) and primary not in ["product_question", "trust_concern"]:
+        elif in_negotiation and (intent_res.offered_price is not None or intent_res.requested_quantity is not None or intent_decision.offered_price is not None or intent_decision.requested_quantity is not None) and primary not in ["product_question", "trust_concern"]:
             # If in an active negotiation and user sends a price offer or changes quantity, preserve negotiation flow
             primary = "price_negotiation"
             hesitation = "price"
-
-        requested_qty = intent_res.requested_quantity if intent_res.requested_quantity is not None else session.quantity
-        offered_price = intent_res.offered_price
 
         response_text = ""
         validated_deal: Optional[ValidatedDeal] = None
@@ -149,24 +171,43 @@ class AgentOrchestrator:
                 last_evidence_ids_used=assessment.evidence_ids_used,
             )
 
-            evidence_dicts = [
-                {"id": e.id, "type": e.type, "source": e.source, "label": e.label, "content": e.content}
-                for e in retrieved_evidence
-            ]
+            # Separate Product Details from Media Requests
+            media_intent = IntentClassifier.classify_media_intent(user_text)
+            if media_intent == "PRODUCT_PHOTO":
+                evidence_dicts = [
+                    {"id": e.id, "type": e.type, "source": e.source, "label": e.label, "content": e.content}
+                    for e in retrieved_evidence if e.type == "image"
+                ]
+            elif media_intent == "PRODUCT_VIDEO":
+                evidence_dicts = [
+                    {"id": e.id, "type": e.type, "source": e.source, "label": e.label, "content": e.content}
+                    for e in retrieved_evidence if e.type == "video"
+                ]
+            elif media_intent == "PRODUCT_PHOTO_VIDEO":
+                evidence_dicts = [
+                    {"id": e.id, "type": e.type, "source": e.source, "label": e.label, "content": e.content}
+                    for e in retrieved_evidence if e.type in ["image", "video"]
+                ]
+            else:
+                evidence_dicts = []
 
-            # Baseline deal validation
-            val_req = DealValidationRequest(
-                product_id=product_id,
-                quantity=session.quantity,
-                proposed_unit_price=session.current_negotiated_unit_price or product.listed_price,
-                seller_authorized_price=session.current_negotiated_unit_price or product.listed_price,
-                current_negotiated_unit_price=session.current_negotiated_unit_price,
-                negotiation_round=session.negotiation_round,
-            )
-            validated_deal = DealConsistencyValidator.validate_deal(policy, val_req)
+            # Baseline deal validation: preserve active validated deal if matching quantity
+            if session.last_validated_deal and session.last_validated_deal.is_valid and session.last_validated_deal.quantity == session.quantity:
+                validated_deal = session.last_validated_deal
+            else:
+                single_anchor = session.single_unit_negotiated_price or (session.current_negotiated_unit_price if session.quantity == 1 else None)
+                val_req = DealValidationRequest(
+                    product_id=product_id,
+                    quantity=session.quantity,
+                    proposed_unit_price=session.current_negotiated_unit_price or product.listed_price,
+                    seller_authorized_price=session.current_negotiated_unit_price or product.listed_price,
+                    current_negotiated_unit_price=single_anchor,
+                    negotiation_round=session.negotiation_round,
+                )
+                validated_deal = DealConsistencyValidator.validate_deal(policy, val_req)
 
         # --- B. PRICE NEGOTIATION AGENT FLOW ---
-        elif primary in ["price_negotiation", "price_hesitation", "bulk_request"] or hesitation in ["price", "both"] or offered_price is not None:
+        elif primary in ["price_negotiation", "price_hesitation", "bulk_request", "quantity_pricing_query", "seller_policy_probing"] or hesitation in ["price", "both"] or offered_price is not None:
             current_round = session.negotiation_round + 1
             
             max_rounds = policy.max_negotiation_rounds
@@ -176,10 +217,11 @@ class AgentOrchestrator:
             # If buyer switched quantity or inquired without an offer, evaluate cleanly for requested_qty.
             if offered_price is not None:
                 eval_price = offered_price
-            elif requested_qty != session.quantity:
-                eval_price = None
             else:
-                eval_price = session.current_negotiated_unit_price
+                eval_price = None
+
+            # Determine negotiated anchor to pass
+            negotiated_anchor = session.single_unit_negotiated_price or session.current_negotiated_unit_price
 
             # B1. Deterministic PolicyEngine Concession Evaluation
             decision: PolicyEngineDecision = PolicyEngine.evaluate_offer(
@@ -187,135 +229,136 @@ class AgentOrchestrator:
                 buyer_offer=eval_price,
                 round_number=current_round,
                 quantity=requested_qty,
+                negotiated_unit_price=negotiated_anchor,
             )
 
             # B2. Deterministic DealConsistencyValidator Final Authority
-            # Pass proposed_unit_price if buyer offered one; otherwise authorized price for this quantity
             proposed_eval_price = eval_price if eval_price is not None else decision.seller_authorized_price
             val_req = DealValidationRequest(
                 product_id=product_id,
                 quantity=requested_qty,
                 proposed_unit_price=proposed_eval_price,
                 seller_authorized_price=decision.seller_authorized_price,
-                current_negotiated_unit_price=session.current_negotiated_unit_price if requested_qty == session.quantity else None,
+                current_negotiated_unit_price=negotiated_anchor,
                 negotiation_round=current_round,
                 buyer_committed=False,
             )
 
             validated_deal = DealConsistencyValidator.validate_deal(policy, val_req)
-            is_deal_accepted = decision.accepted and validated_deal.is_valid
+            # In Flow B (negotiation / counter / policy probing):
+            # A deal is ONLY accepted if the buyer explicitly proposed an acceptable price (eval_price is not None and decision.accepted).
+            # Negotiation round exhaustion or inquiries without an acceptable price offer NEVER trigger acceptance.
+            is_deal_accepted = bool(decision.accepted and validated_deal.is_valid and eval_price is not None)
 
             # Update Session State
             session = session_db.record_negotiation_step(
                 session_id=session.session_id,
-                agreed_price=validated_deal.effective_unit_price if (is_deal_accepted and current_round < max_rounds) else None,
+                agreed_price=validated_deal.effective_unit_price if is_deal_accepted else None,
                 quantity=requested_qty,
                 increment_round=(policy.pricing_mode != "fixed"),
             )
             # Establish the authoritative counter / firm price in session
             session.current_negotiated_unit_price = validated_deal.effective_unit_price
+            if requested_qty == 1:
+                session.single_unit_negotiated_price = validated_deal.effective_unit_price
             session = session_db.set_validated_deal(
                 session.session_id,
                 validated_deal,
-                is_agreed=is_deal_accepted and (current_round < max_rounds),
+                is_agreed=is_deal_accepted,
             )
 
-            # B3. Grounded Counter-Offer Response Generation
+            # Reusable Commercial Engine: Dynamic Upsell Calculation
+            upsell_opp: Optional[UpsellOpportunity] = None
+            if policy.bulk_rules and policy.bulk_rules.tiers:
+                higher_tiers = [t for t in policy.bulk_rules.tiers if t.min_quantity > requested_qty]
+                if higher_tiers:
+                    next_tier = min(higher_tiers, key=lambda t: t.min_quantity)
+                    # REUSE commercial engine: evaluate_offer for the next tier
+                    upsell_eval = PolicyEngine.evaluate_offer(
+                        policy=policy,
+                        buyer_offer=None,
+                        round_number=current_round,
+                        quantity=next_tier.min_quantity,
+                        negotiated_unit_price=negotiated_anchor,
+                    )
+                    if upsell_eval.seller_authorized_price < validated_deal.effective_unit_price:
+                        upsell_total = (upsell_eval.seller_authorized_price * Decimal(str(next_tier.min_quantity))).quantize(
+                            Decimal("0.01"), rounding=ROUND_HALF_UP
+                        )
+                        upsell_opp = UpsellOpportunity(
+                            min_quantity=next_tier.min_quantity,
+                            unit_rate=upsell_eval.seller_authorized_price,
+                            total_payable=upsell_total,
+                            discount_pct=upsell_eval.applied_tier_discount if not upsell_eval.is_floor_clamped else None,
+                        )
+
+            # B3. Grounded Response Generation
             if policy.pricing_mode == "fixed":
                 response_text = (
                     f"{product.name} is offered under a fixed pricing model at ₹{product.listed_price:.2f}/unit. "
                     f"Discounts are not available for single units. Total for {requested_qty} unit(s) is ₹{validated_deal.total_payable_amount:.2f}."
                 )
                 can_show_payment = False
-            elif requested_qty > 1:
-                # Commercial Model: Multi-Unit / Volume Deal
-                # Formula:
-                # base_total = listed_price * quantity
-                # volume_discount = seller_policy(quantity)
-                # final_total = base_total - volume_discount
-                # effective_unit_price = final_total / quantity
-                can_show_payment = False
-                base_total = (product.listed_price * Decimal(str(requested_qty))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                bulk_discount_pct = decision.applied_tier_discount
-
-                if bulk_discount_pct is not None:
-                    discount_amt = (base_total * bulk_discount_pct / Decimal("100.0")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                    final_total = validated_deal.total_payable_amount
-                    eff_price = validated_deal.effective_unit_price
-                    pct_str = f"{bulk_discount_pct:.0f}%" if bulk_discount_pct % 1 == 0 else f"{bulk_discount_pct}%"
-
-                    response_text = (
-                        f"Multi-unit purchases transition to our authoritative volume discount policy:\n\n"
-                        f"• Base Total: ₹{base_total:.2f} (₹{product.listed_price:.2f} × {requested_qty} units)\n"
-                        f"• Volume Discount ({pct_str}): -₹{discount_amt:.2f}\n"
-                        f"• Final Total: ₹{final_total:.2f}\n"
-                        f"• Effective Unit Price: ₹{eff_price:.2f} per unit\n\n"
-                        f"If you would like to proceed with this purchase, reply 'Ok done' or 'I want to buy', or ask where to pay."
-                    )
-                elif policy.bulk_rules and policy.bulk_rules.tiers:
-                    sorted_tiers = sorted(policy.bulk_rules.tiers, key=lambda t: t.min_quantity)
-                    min_tier = sorted_tiers[0]
-                    min_pct_str = f"{min_tier.discount_percentage:.0f}%" if min_tier.discount_percentage % 1 == 0 else f"{min_tier.discount_percentage}%"
-                    response_text = (
-                        f"Multi-unit purchases transition to our authoritative volume pricing policy.\n\n"
-                        f"Our volume discount tiers for {product.name} begin at {min_tier.min_quantity} units ({min_pct_str} off). "
-                        f"Since {requested_qty} unit(s) does not qualify for a volume discount tier, the standard catalog price of ₹{product.listed_price:.2f} per unit applies:\n"
-                        f"• Base Total: ₹{validated_deal.total_payable_amount:.2f} (₹{product.listed_price:.2f} × {requested_qty} units)\n"
-                        f"• Volume Discount: ₹0.00 (0%)\n"
-                        f"• Final Total: ₹{validated_deal.total_payable_amount:.2f}\n"
-                        f"• Effective Unit Price: ₹{product.listed_price:.2f} per unit\n\n"
-                        f"To unlock volume savings, you can increase your order to at least {min_tier.min_quantity} units, or proceed with {requested_qty} unit(s) at ₹{validated_deal.total_payable_amount:.2f}."
-                    )
-                else:
-                    response_text = (
-                        f"Multi-unit purchases transition to our authoritative volume pricing policy.\n\n"
-                        f"Volume discount tiers are not available for {product.name}. The standard catalog price applies:\n"
-                        f"• Base Total: ₹{validated_deal.total_payable_amount:.2f} (₹{product.listed_price:.2f} × {requested_qty} units)\n"
-                        f"• Final Total: ₹{validated_deal.total_payable_amount:.2f}\n"
-                        f"• Effective Unit Price: ₹{product.listed_price:.2f} per unit"
-                    )
-            elif current_round >= max_rounds:
-                # NEGOTIATION FINISHED != BUYER ACCEPTED.
-                # When round reaches the seller's final firm price:
-                # - Establish the final authoritative seller price
-                # - Tell the buyer: "We cannot get below ₹X. It is against seller policy."
-                # - Do not use "maximum rounds exceeded" or "limit" language.
-                # - Do not automatically manufacture buyer acceptance merely because round was reached.
-                # - Do not mark the deal as buyer-agreed solely because negotiation ended.
-                session.deal_status = "negotiating"
-                can_show_payment = False
-                final_price = validated_deal.effective_unit_price
-                total_amt = (final_price * requested_qty).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                response_text = (
-                    f"We cannot get below ₹{final_price:.2f}. It is against seller policy.\n\n"
-                    f"Our final firm price for {product.name} is ₹{final_price:.2f} per unit "
-                    f"(Total: ₹{total_amt:.2f} for {requested_qty} unit(s)).\n\n"
-                    f"If you would like to proceed with this purchase, reply 'Ok done' or 'I want to buy', or ask where to pay."
-                )
             elif is_deal_accepted:
-                # Seller accepts buyer's offer, but buyer has not yet given explicit purchase commitment
-                can_show_payment = False
-                response_text = (
-                    f"Great news! Your offer for {product.name} has been approved.\n"
-                    f"• Effective Unit Price: ₹{validated_deal.effective_unit_price:.2f}\n"
-                    f"• Quantity: {validated_deal.quantity}\n"
-                    f"• Total Payable Amount: ₹{validated_deal.total_payable_amount:.2f}\n"
-                    f"({validated_deal.applied_rule_description})\n\n"
-                    f"To complete your purchase, reply 'Ok done' or 'I want to buy', or ask where to pay!"
+                session.deal_status = "agreed"
+                status_val = "agreed"
+                can_show_payment = True
+
+                commercial_ctx = BuyerSafeCommercialContext(
+                    product_name=product.name,
+                    catalog_listed_price=product.listed_price,
+                    single_unit_negotiated_anchor=session.single_unit_negotiated_price,
+                    requested_quantity=requested_qty,
+                    effective_unit_price=validated_deal.effective_unit_price,
+                    total_payable_amount=validated_deal.total_payable_amount,
+                    applied_discount_percentage=decision.applied_tier_discount if not decision.is_floor_clamped else None,
+                    is_floor_clamped=decision.is_floor_clamped,
+                    negotiation_round=current_round,
+                    max_rounds=max_rounds,
+                    is_final_round=False,
+                    deal_status=status_val,
+                    buyer_accepted=True,
+                    can_show_payment=True,
+                    upsell_opportunity=upsell_opp,
+                )
+                response_text = GeminiSalespersonService.generate_salesperson_response(
+                    message=user_text,
+                    commercial_context=commercial_ctx,
+                    chat_history=history_snippet,
+                    client_override=client_override_salesperson,
+                    buyer_intent=primary,
                 )
             else:
+                is_final = (current_round >= max_rounds)
+                session.deal_status = "negotiating"
+                status_val = "firm_policy_boundary" if is_final else "negotiating"
                 can_show_payment = False
-                if offered_price is not None:
-                    response_text = (
-                        f"Your offer of ₹{offered_price:.2f} is below our acceptable commercial range for {product.name}. "
-                        f"Our counter-offer is ₹{validated_deal.effective_unit_price:.2f} per unit "
-                        f"(Total: ₹{validated_deal.total_payable_amount:.2f} for {requested_qty} unit(s))."
-                    )
-                else:
-                    response_text = (
-                        f"For {requested_qty} unit(s) of {product.name}, our authorized price is ₹{validated_deal.effective_unit_price:.2f} per unit "
-                        f"(Total: ₹{validated_deal.total_payable_amount:.2f})."
-                    )
+
+                commercial_ctx = BuyerSafeCommercialContext(
+                    product_name=product.name,
+                    catalog_listed_price=product.listed_price,
+                    single_unit_negotiated_anchor=session.single_unit_negotiated_price,
+                    requested_quantity=requested_qty,
+                    effective_unit_price=validated_deal.effective_unit_price,
+                    total_payable_amount=validated_deal.total_payable_amount,
+                    applied_discount_percentage=decision.applied_tier_discount if not decision.is_floor_clamped else None,
+                    is_floor_clamped=decision.is_floor_clamped,
+                    negotiation_round=current_round,
+                    max_rounds=max_rounds,
+                    is_final_round=is_final,
+                    deal_status=status_val,
+                    buyer_accepted=is_deal_accepted,
+                    can_show_payment=can_show_payment,
+                    upsell_opportunity=upsell_opp,
+                )
+
+                response_text = GeminiSalespersonService.generate_salesperson_response(
+                    message=user_text,
+                    commercial_context=commercial_ctx,
+                    chat_history=history_snippet,
+                    client_override=client_override_salesperson,
+                    buyer_intent=primary,
+                )
 
         # --- C. PURCHASE INTENT FLOW ---
         elif primary == "purchase_intent":
@@ -339,12 +382,18 @@ class AgentOrchestrator:
                 can_show_payment = False
             else:
                 eval_price = session.current_negotiated_unit_price or product.listed_price
+                negotiated_anchor = session.single_unit_negotiated_price or (session.current_negotiated_unit_price if session.quantity == 1 else None)
+                if session.last_validated_deal and session.last_validated_deal.quantity == requested_qty:
+                    eval_price = session.last_validated_deal.effective_unit_price
+                else:
+                    eval_price = session.current_negotiated_unit_price or negotiated_anchor or product.listed_price
+
                 val_req = DealValidationRequest(
                     product_id=product_id,
                     quantity=requested_qty,
                     proposed_unit_price=eval_price,
                     seller_authorized_price=eval_price,
-                    current_negotiated_unit_price=session.current_negotiated_unit_price,
+                    current_negotiated_unit_price=negotiated_anchor,
                     negotiation_round=session.negotiation_round,
                     buyer_committed=True,
                 )
@@ -353,57 +402,146 @@ class AgentOrchestrator:
                 can_show_payment = validated_deal.is_valid
 
                 if validated_deal.is_valid:
-                    if is_payment_inquiry:
-                        response_text = (
-                            f"Deal confirmed! You have accepted our offer for {product.name}.\n"
-                            f"You can pay for it securely right below using our official Razorpay checkout gateway!\n\n"
-                            f"• Effective Unit Price: ₹{validated_deal.effective_unit_price:.2f}\n"
-                            f"• Quantity: {validated_deal.quantity} unit(s)\n"
-                            f"• Total Payable Amount: ₹{validated_deal.total_payable_amount:.2f}\n\n"
-                            f"Click 'Pay with Razorpay' below to complete your payment."
-                        )
-                    elif has_active_counter:
-                        response_text = (
-                            f"Deal confirmed! You have accepted our offer for {product.name}.\n\n"
-                            f"• Effective Unit Price: ₹{validated_deal.effective_unit_price:.2f}\n"
-                            f"• Quantity: {validated_deal.quantity} unit(s)\n"
-                            f"• Total Payable Amount: ₹{validated_deal.total_payable_amount:.2f}\n"
-                            f"({validated_deal.applied_rule_description})\n\n"
-                            f"Click 'Pay with Razorpay' below to complete your checkout."
-                        )
-                    else:
-                        response_text = (
-                            f"Your purchase for {product.name} is confirmed and locked at the catalog listed price!\n\n"
-                            f"• Unit Price: ₹{validated_deal.effective_unit_price:.2f}\n"
-                            f"• Quantity: {validated_deal.quantity} unit(s)\n"
-                            f"• Total Amount: ₹{validated_deal.total_payable_amount:.2f}\n\n"
-                            f"Click 'Pay with Razorpay' below to complete your payment."
-                        )
+                    session.deal_status = "agreed"
+                    session.quantity = requested_qty
+                    session.current_negotiated_unit_price = validated_deal.effective_unit_price
+                    commercial_ctx = BuyerSafeCommercialContext(
+                        product_name=product.name,
+                        catalog_listed_price=product.listed_price,
+                        single_unit_negotiated_anchor=session.single_unit_negotiated_price,
+                        requested_quantity=requested_qty,
+                        effective_unit_price=validated_deal.effective_unit_price,
+                        total_payable_amount=validated_deal.total_payable_amount,
+                        applied_discount_percentage=None,
+                        is_floor_clamped=False,
+                        negotiation_round=session.negotiation_round,
+                        max_rounds=policy.max_negotiation_rounds,
+                        is_final_round=False,
+                        deal_status="agreed",
+                        buyer_accepted=True,
+                        can_show_payment=True,
+                        upsell_opportunity=None,
+                    )
+                    response_text = GeminiSalespersonService.generate_salesperson_response(
+                        message=user_text,
+                        commercial_context=commercial_ctx,
+                        chat_history=history_snippet,
+                        client_override=client_override_salesperson,
+                        buyer_intent=primary,
+                    )
                 else:
                     response_text = f"Unable to validate deal for checkout: {validated_deal.validation_message}"
 
-        # --- D. CLARIFICATION & GENERAL CONVERSATION FLOW ---
-        else:
-            if len(session.messages) <= 2:
+        # --- S. SAVINGS INQUIRY FLOW ---
+        elif primary == "savings_inquiry":
+            active_qty = session.quantity
+            if session.last_validated_deal and session.last_validated_deal.quantity == active_qty:
+                validated_deal = session.last_validated_deal
+            else:
+                single_anchor = session.single_unit_negotiated_price or (session.current_negotiated_unit_price if session.quantity == 1 else None)
+                val_req = DealValidationRequest(
+                    product_id=product_id,
+                    quantity=active_qty,
+                    proposed_unit_price=session.current_negotiated_unit_price or product.listed_price,
+                    seller_authorized_price=session.current_negotiated_unit_price or product.listed_price,
+                    current_negotiated_unit_price=single_anchor,
+                    negotiation_round=session.negotiation_round,
+                )
+                validated_deal = DealConsistencyValidator.validate_deal(policy, val_req)
+                session = session_db.set_validated_deal(session.session_id, validated_deal, is_agreed=False)
+
+            active_unit = validated_deal.effective_unit_price
+            active_total = validated_deal.total_payable_amount
+            single_anchor = session.single_unit_negotiated_price or product.listed_price
+            normal_total = (single_anchor * Decimal(str(active_qty))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            catalog_total = (product.listed_price * Decimal(str(active_qty))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            savings_vs_anchor = (normal_total - active_total).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            savings_vs_catalog = (catalog_total - active_total).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+            if session.single_unit_negotiated_price and session.single_unit_negotiated_price < product.listed_price:
                 response_text = (
-                    f"Welcome! I am your AI Purchase Confidence & Deal Agent for {product.name}.\n"
-                    f"Listed price is ₹{product.listed_price:.2f}. "
-                    f"Feel free to ask about product quality evidence or negotiate commercial terms."
+                    f"At your negotiated rate of ₹{single_anchor:,.2f} each, {active_qty} pieces would normally come to ₹{normal_total:,.2f}. "
+                    f"With our 18% volume discount applied, you pay ₹{active_unit:,.2f} per piece, totaling ₹{active_total:,.2f} — "
+                    f"so you save ₹{savings_vs_anchor:,.2f} compared with buying {active_qty} at your negotiated rate "
+                    f"(and ₹{savings_vs_catalog:,.2f} off the original catalog price)! If that works for you, let me know."
                 )
             else:
                 response_text = (
-                    f"I am here to assist with your purchase of {product.name}. "
-                    f"Listed MRP is ₹{product.listed_price:.2f}. You can ask about product specs, quality evidence, or propose a price offer."
+                    f"At the standard listed price of ₹{product.listed_price:,.2f} each, {active_qty} pieces would normally come to ₹{catalog_total:,.2f}. "
+                    f"With our bulk discount applied, you pay ₹{active_unit:,.2f} per piece, totaling ₹{active_total:,.2f} — "
+                    f"so you save ₹{savings_vs_catalog:,.2f} in total! If that works for you, let me know."
                 )
-            val_req = DealValidationRequest(
-                product_id=product_id,
-                quantity=session.quantity,
-                proposed_unit_price=session.current_negotiated_unit_price or product.listed_price,
-                seller_authorized_price=session.current_negotiated_unit_price or product.listed_price,
-                current_negotiated_unit_price=session.current_negotiated_unit_price,
-                negotiation_round=session.negotiation_round,
-            )
-            validated_deal = DealConsistencyValidator.validate_deal(policy, val_req)
+
+            can_show_payment = False
+            session.deal_status = "negotiating"
+
+        # --- D. CLARIFICATION & GENERAL CONVERSATION FLOW ---
+        else:
+            can_show_payment = False
+            if in_negotiation:
+                session.deal_status = "negotiating"
+
+            # Check if this message was actually a product inquiry that reached Flow D
+            if IntentClassifier.is_product_question(user_text) and offered_price is None:
+                retrieved_evidence, assessment = EvidenceRetriever.retrieve_evidence_for_product(
+                    product_id=product_id, question=user_text
+                )
+                response_text = ProductQAService.answer_product_question(
+                    product=product,
+                    evidence_list=retrieved_evidence,
+                    assessment=assessment,
+                    buyer_question=user_text,
+                )
+                session.trust_state = TrustState(
+                    status=assessment.status,
+                    last_evidence_ids_used=assessment.evidence_ids_used,
+                )
+                validated_deal = session.last_validated_deal
+            else:
+                # Clarification / General Conversation
+                # PRESERVE existing validated deal if matching quantity
+                if session.last_validated_deal and session.last_validated_deal.is_valid and session.last_validated_deal.quantity == session.quantity:
+                    validated_deal = session.last_validated_deal
+                else:
+                    single_anchor = session.single_unit_negotiated_price or (session.current_negotiated_unit_price if session.quantity == 1 else None)
+                    val_req = DealValidationRequest(
+                        product_id=product_id,
+                        quantity=session.quantity,
+                        proposed_unit_price=session.current_negotiated_unit_price or product.listed_price,
+                        seller_authorized_price=session.current_negotiated_unit_price or product.listed_price,
+                        current_negotiated_unit_price=single_anchor,
+                        negotiation_round=session.negotiation_round,
+                    )
+                    validated_deal = DealConsistencyValidator.validate_deal(policy, val_req)
+                    session = session_db.set_validated_deal(session.session_id, validated_deal, is_agreed=False)
+
+                commercial_status = session.deal_status if session.deal_status in ["agreed", "firm_policy_boundary", "checked_out"] else "negotiating"
+                commercial_ctx = BuyerSafeCommercialContext(
+                    product_name=product.name,
+                    catalog_listed_price=product.listed_price,
+                    single_unit_negotiated_anchor=session.single_unit_negotiated_price,
+                    requested_quantity=session.quantity,
+                    effective_unit_price=validated_deal.effective_unit_price if validated_deal else (session.current_negotiated_unit_price or product.listed_price),
+                    total_payable_amount=validated_deal.total_payable_amount if validated_deal else Decimal("0.00"),
+                    applied_discount_percentage=None,
+                    is_floor_clamped=False,
+                    negotiation_round=session.negotiation_round,
+                    max_rounds=policy.max_negotiation_rounds,
+                    is_final_round=session.negotiation_round >= policy.max_negotiation_rounds,
+                    deal_status=commercial_status,
+                    buyer_accepted=False,
+                    can_show_payment=False,
+                    upsell_opportunity=None,
+                )
+
+                # Generate natural response via Stage 3 salesperson (or safe deterministic fallback)
+                response_text = GeminiSalespersonService.generate_salesperson_response(
+                    message=user_text,
+                    commercial_context=commercial_ctx,
+                    chat_history=history_snippet,
+                    client_override=client_override_salesperson,
+                    buyer_intent=primary,
+                )
 
         # 6. Append agent response to session
         session_db.append_message(

@@ -98,13 +98,56 @@ def run_browser_payment_tests():
         # SCENARIO 4: Order Creation & Escrow Node Activation
         # -------------------------------------------------------------
         print("\n[SCENARIO 4] Testing End-to-End Razorpay Order Creation Transition")
+        print("\n[SCENARIO 4] Testing End-to-End Razorpay Order Creation & Verification Lifecycle")
         pay_btn = page.locator("button:has-text('Pay')").first
         pay_btn.click()
         time.sleep(2.5)
+        time.sleep(3.0)
         content_final = page.content()
         assert "Razorpay Order ID" in content_final or "order_rzp_" in content_final, \
             "Razorpay order creation did not return order ID!"
         print("  [PASS] Razorpay order created and settlement confirmation rendered.")
+        assert "PAYMENT_CAPTURED" in content_final, \
+            "Expected PAYMENT_CAPTURED state in verified payment card!"
+        assert "ESCROW_RESERVED" in content_final or "ESCROW RESERVED" in content_final, \
+            "Expected ESCROW_RESERVED state in verified payment card!"
+        print("  [PASS] Razorpay order created, signed, verified, PAYMENT_CAPTURED and ESCROW_RESERVED rendered.")
+
+        # -------------------------------------------------------------
+        # SCENARIO 5: Multi-Unit Pricing with Negotiated Anchor (prod_004)
+        # -------------------------------------------------------------
+        print("\n[SCENARIO 5] Testing Multi-Unit Pricing with Negotiated Unit Anchor")
+        # Switch to 01 Ceramics & Objects (prod_004, listed 1200, floor 800)
+        page.locator("button:has-text('01 Ceramics')").first.click()
+        time.sleep(1.5)
+
+        # Negotiate 1 unit down
+        input_field.fill("Can I get 1 for 900?")
+        send_btn.click()
+        time.sleep(2.5)
+
+        # Now ask for 2 units
+        input_field.fill("Give me 2 units")
+        send_btn.click()
+        time.sleep(2.5)
+        content_qty2 = page.content()
+        assert "1,800" in content_qty2 or "1800" in content_qty2, \
+            "Multi-unit 2 units did not anchor on negotiated 900 (should be 1800)!"
+        assert "2,400" not in content_qty2 and "2400" not in content_qty2, \
+            "VIOLATION: Multi-unit reset to listed price (2400)!"
+        print("  [PASS] 2 units properly anchored on negotiated unit rate 900 -> Rs. 1800 (NOT 2400).")
+
+        # -------------------------------------------------------------
+        # SCENARIO 6: Mobile Viewport Verification (390 x 844)
+        # -------------------------------------------------------------
+        print("\n[SCENARIO 6] Testing Mobile Viewport Layout (390 x 844)")
+        mobile_page = browser.new_page(viewport={"width": 390, "height": 844})
+        mobile_page.goto("http://localhost:3000")
+        mobile_page.wait_for_timeout(2000)
+        mobile_content = mobile_page.content()
+        assert "AURA" in mobile_content
+        print("  [PASS] Mobile viewport rendered cleanly without errors.")
+        mobile_page.close()
 
         browser.close()
 

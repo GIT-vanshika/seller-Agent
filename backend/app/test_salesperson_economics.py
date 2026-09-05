@@ -1,3 +1,4 @@
+import os
 from decimal import Decimal
 from app.data_loader import db
 from app.policy_engine import PolicyEngine
@@ -7,6 +8,7 @@ from app.session_manager import session_db
 
 
 def test_salesperson_economics():
+    os.environ["GEMINI_API_KEY"] = ""
     print("==================================================")
     print("     TESTING SALESPERSON-STYLE NEGOTIATION        ")
     print("==================================================")
@@ -106,13 +108,13 @@ def test_salesperson_economics():
     d1 = AgentOrchestrator.process_user_message(sid_switch, "prod_003", "Can I get 1 for 1900?")
     assert d1.validated_deal.quantity == 1 and d1.validated_deal.effective_unit_price == Decimal("2425.00")
 
-    # Turn 2: switch to 2 units
+    # Turn 2: switch to 2 units (anchored on R1 concession 2425 with 15% bulk tier: 2425 * 0.85 = 2061.25)
     d2 = AgentOrchestrator.process_user_message(sid_switch, "prod_003", "Can you do better if I take 2?")
-    assert d2.validated_deal.quantity == 2 and d2.validated_deal.effective_unit_price == Decimal("2125.00")
+    assert d2.validated_deal.quantity == 2 and d2.validated_deal.effective_unit_price == Decimal("2061.25")
 
-    # Turn 3: switch to 3 units
+    # Turn 3: switch to 3 units (anchored on 2425 with 18% bulk tier: 2425 * 0.82 = 1988.50)
     d3 = AgentOrchestrator.process_user_message(sid_switch, "prod_003", "What about 3?")
-    assert d3.validated_deal.quantity == 3 and d3.validated_deal.effective_unit_price == Decimal("2050.00")
+    assert d3.validated_deal.quantity == 3 and d3.validated_deal.effective_unit_price == Decimal("1988.50")
 
     # Turn 4: switch BACK to 1 unit (MUST NOT LEAK 2050)
     d4 = AgentOrchestrator.process_user_message(sid_switch, "prod_003", "1 piece")
