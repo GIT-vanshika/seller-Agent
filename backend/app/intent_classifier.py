@@ -196,8 +196,6 @@ class IntentClassifier:
     @classmethod
     def classify_media_intent(cls, text: str) -> str:
         text_clean = text.lower().strip().replace("’", "'")
-        if re.search(r"\b(?:look\s+like|looks\s+like|look\s+in\s+real)\b", text_clean):
-            return "PRODUCT_DETAIL"
         has_photo = bool(re.search(r"\b(?:photo|photos|picture|pictures|pic|pics|image|images)\b", text_clean))
         has_video = bool(re.search(r"\b(?:video|videos|clip|clips|footage)\b", text_clean))
         if has_photo and has_video:
