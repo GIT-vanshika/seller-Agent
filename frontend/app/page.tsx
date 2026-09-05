@@ -221,6 +221,11 @@ function CeramicVaseIllustration({ plate }: { plate: "studio" | "workshop" | "in
 }
 
 export default function AuraCommerceStorefront() {
+  const [mounted, setMounted] = useState<boolean>(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("01 Ceramics & Objects");
   const [selectedProductId, setSelectedProductId] = useState<string>("prod_004");
@@ -684,6 +689,19 @@ export default function AuraCommerceStorefront() {
     return `Plate [01] · ${product?.name || "Studio"} Archival Neutral`;
   };
 
+  if (!mounted) {
+    return (
+      <div suppressHydrationWarning className="bg-[#0d0e12] text-[#f7f5f3] min-h-screen flex items-center justify-center font-body-md antialiased">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 rounded-full border-2 border-[#4364f7] border-t-transparent animate-spin" />
+          <span className="font-data-mono-sm text-xs text-[#9ea2b5] uppercase tracking-widest">
+            Initializing AURA Concierge Engine...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div suppressHydrationWarning className="bg-background text-on-surface min-h-screen flex flex-col font-body-md antialiased selection:bg-primary/30">
       {/* 1. STOREFRONT HEADER (DARK LUXURY ARCHITECTURE) */}
@@ -1005,7 +1023,7 @@ export default function AuraCommerceStorefront() {
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-[19px] text-primary">forum</span>
                 <span className="font-label-md text-xs uppercase tracking-widest text-on-surface font-bold">
-                  Autonomous Purchase Intelligence Stream
+                  seller Agent
                 </span>
               </div>
               <div className="flex items-center gap-2">

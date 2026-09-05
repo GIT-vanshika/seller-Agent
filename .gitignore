@@ -23,6 +23,9 @@ build/
 .DS_Store
 Thumbs.db
 
-# Scratch / Test artifacts
+# Scratch / Test artifacts / Logs
 scratch_*
 scratch/
+*.log
+*.jsonl
+*.tsbuildinfo
